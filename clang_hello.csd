@@ -1,8 +1,8 @@
 <CsoundSyntheizer>
 <CsLicense>
-This .csd file tests the new Clang JIT compiler opcode for Csound.
+This .csd file tests the new Clang JIT compiler opcodes for Csound.
 </CsLicense>
-<CsOptions>
+<CsOptions>z
 -m195 -otest.wav
 </CsOptions>
 <CsInstruments>
@@ -18,6 +18,7 @@ gS_source_code = {{
 #include <sstream>
 #include <string>
 #include <vector>
+#include "clang_invokable.hpp"
 
 void* __dso_handle = (void *)&__dso_handle;
 
@@ -29,6 +30,8 @@ extern "C" int csound_main(CSOUND *csound) {
     std::cerr << "Now that we have manually defined our own __dso_handle, this proves std::cerr works as well!\\n********\\n" << std::endl;
     return 0;
 };
+
+
 
 }}
 
