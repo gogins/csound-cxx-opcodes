@@ -78,7 +78,8 @@ class ClangInvokableBase : public ClangInvokable {
         }
         uint32_t input_arg_count()
         {
-            return (uint32_t)opds->optext->t.inArgCount;
+            // The first two input arguments belong to the invoking opcode.
+            return (uint32_t)opds->optext->t.inArgCount - 2;
         }
         void log(const char *format,...)
         {

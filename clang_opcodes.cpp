@@ -5,9 +5,10 @@
  * https://github.com/gogins<br>
  * http://michaelgogins.tumblr.com
  *
- * This file implements a Csound opcode that compiles C or C++ source code,
- * embedded in tne Csound orchestra, for any purpose. The compiler is a
- * simplified, embedded instance of the clang/llvm compiler.
+ * This file implements Csound opcodes that compiles C or C++ source code,
+ * embedded in tne Csound orchestra, for any purpose, and invokes the compiled 
+ * The compiler is a simplified, embedded instance of the Clang/LLVM 
+  * on-request compiler (ORC).
  *
  * This code is based on the "compiler_instance C Interpreter Example:"
  * examples/clang-interpreter/main.cpp.
@@ -17,10 +18,10 @@
  * i_result clang S_unique_entry_point, S_source_code, S_compiler_options [, link_libraries]
  *
  * The link_libraries parameter is a space-delimited list of zero or more
- * libraries that llvm will load and that will be callable by the compiled
- * module. This list plays the part of the `-l` options for a standalone
- * compiler/linker. Each library must be specified by its fully qualified
- * filepath.
+ * dynamic link libraries that llvm will load and that will be callable by the 
+ * compiled module. This list plays the part of the `-l` options for a 
+ * standalone compiler/linker. Each library must be specified by its fully 
+ * qualified filepath.
  * ```
  */
 
@@ -353,7 +354,7 @@ public:
         std::unique_ptr<llvm::Module> module = emit_llvm_action->takeModule();
         //std::fprintf(stderr, "ClangCompile::init: line %d\n", __LINE__);
         if(module) {
-            // Load and link all libraries required.
+            // Load and link all dynamic link libraries required.
             auto link_libraries = csound->strarg2name(csound, (char *)0, S_link_libraries->data, (char *)"", 1);
             std::vector<std::string> link_libraries_list;
             tokenize(link_libraries, ' ', link_libraries_list);
@@ -389,13 +390,20 @@ public:
  * implements a `ClangInvokable`, creates an instance of that
  * `ClangInvokable` and invokes it.
  */
-class ClangInvoke : public csound::OpcodeNoteoffBase<ClangInvoke>
+class ClangInvoke : public csound::OpcodeBase<ClangInvoke>
 {
 public:
     // OUTPUTS
     MYFLT *outputs[40];
     // INPUTS
     STRINGDAT *S_invokable_factory;
+/* thread vals, where isub=1, ksub=2:
+   0 =     1  OR   2  (B out only)
+   1 =     1
+   2 =             2
+   3 =     1  AND  2
+ */
+
     MYFLT *i_thread;
     MYFLT *inputs[VARGMAX];
     // STATE
@@ -411,7 +419,7 @@ public:
 	    auto invokable_factory = (ClangInvokable *(*)()) exit_on_error(jit_compiler->getSymbolAddress(invokable_factory_name));
         if (diagnostics_enabled) csound->Message(csound, "####### clang_invoke::init: factory function: %p\n", invokable_factory);
         auto instance = invokable_factory();
-      	if (diagnostics_enabled) csound->Message(csound, "####### clang_invoke::init: instance: %p\n", instance);
+      	if (diagnostics_enabled) csound->Message(csound, "####### clang_invoke::init: instance: %p thread: %d\n", instance, thread);
 	    clang_invokable.reset(instance);
         if (thread == 2) {
             return result;
@@ -424,20 +432,20 @@ public:
     int kontrol(CSOUND *csound)
     {
         int result = OK;
-        if (thread == 0) {
+        if (thread == 1) {
             return result;
         }
         result = clang_invokable->kontrol(csound, outputs, inputs);
         return result;
 
     }
-    int noteff(CSOUND *csound) {
-        int result = OK;
-        result = clang_invokable->noteoff(csound);
-        clang_invokable = nullptr;
-	if (diagnostics_enabled) csound->Message(csound, "####### clang_invoke::noteoff: invokable::noteoff: result: %d\n", result);
-    	return result;
-    }
+    //~ int noteoff(CSOUND *csound) {
+        //~ int result = OK;
+        //~ result = clang_invokable->noteoff(csound);
+        //~ clang_invokable.reset();
+        //~ if (diagnostics_enabled) csound->Message(csound, "####### clang_invoke::noteoff: invokable::noteoff: result: %d\n", result);
+    	//~ return result;
+    //~ }
 };
 
 extern "C" {
@@ -460,7 +468,7 @@ extern "C" {
                                           0,
                                           3,
                                           (char *)"****************************************",
-                                          (char *)"SiN",
+                                          (char *)"SkN",
                                           (int (*)(CSOUND*,void*)) ClangInvoke::init_,
                                           (int (*)(CSOUND*,void*)) ClangInvoke::kontrol_,
                                           (int (*)(CSOUND*,void*)) 0);

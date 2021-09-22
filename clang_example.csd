@@ -1,6 +1,8 @@
 <CsoundSyntheizer>
 <CsLicense>
-This .csd file tests the new JIT compiler opcode for Csound.
+Author: Michael Gogins
+
+This .csd file demonstrates and tests the new JIT compiler opcodes for Csound.
 </CsLicense>
 <CsOptions>
 -m195 -RWdfo test.wav
@@ -14,8 +16,8 @@ nchnls = 2
 
 #include "FMWaterBell.inc"
 
-connect "FMWaterBell",       "outleft",  "MasterOutput",        "inleft"
-connect "FMWaterBell",       "outright", "MasterOutput",        "inright"
+;connect "FMWaterBell",       "outleft",  "MasterOutput",        "inleft"
+;connect "FMWaterBell",       "outright", "MasterOutput",        "inright"
 connect "ClangGuitar",       "outleft",  "MasterOutput",        "inleft"
 connect "ClangGuitar",       "outright", "MasterOutput",        "inright"
 
@@ -23,39 +25,11 @@ alwayson "MasterOutput"
 
 prints "Compiling and running a simple test C++ module...\n"
 
-S_opcode_lister_code init {{
-
-#include <csound/csdl.h>
-#include <cstdio>
-
-/**
- * Tests whether a function defined in one module can be called from another 
- * module.
- */
-extern "C" void boo() {
-    printf("####### boo!\\n");
-}
-
-extern "C" int csoundNewOpcodeList(CSOUND *csound, opcodeListEntry **opcodelist);
-extern "C" int csoundDisposeOpcodeList(CSOUND *csound, opcodeListEntry *opcodelist);
-
-extern "C" int opcode_lister(CSOUND *csound) {
-    csound->Message(csound, "Listing opcodes from C++...\\n");
-    opcodeListEntry *opcodeList;
-    int count = csoundNewOpcodeList(csound, &opcodeList);
-    csound->Message(csound, "Found %d opcode entries.\\n", count);
-    csoundDisposeOpcodeList(csound, opcodeList);
-    boo();
-    return 0;
-}
-
-}}
-
-i_result clang_orc "opcode_lister", S_opcode_lister_code, "-g -O2 -std=c++14 -I/usr/local/include/csound -stdlib=libstdc++", "/usr/lib/gcc/x86_64-linux-gnu/9/libstdc++.so /usr/lib/gcc/x86_64-linux-gnu/9/libgcc_s.so /usr/lib/x86_64-linux-gnu/libm.so /usr/lib/x86_64-linux-gnu/libpthread.so"
-
 S_guitar_source_code = {{
 
 void* __dso_handle = (void *)&__dso_handle;
+
+static bool diagnostics_enabled = true;
 
 #include <csound/csdl.h>
 
@@ -1419,126 +1393,66 @@ class mydsp : public dsp {
 #endif
 /***************************END USER SECTION ***************************/
 
-/*******************BEGIN ARCHITECTURE SECTION (part 2/2)***************/
+#include "clang_invokable.hpp"
 
-struct dataspace {
-    OPDS      h;                          /* basic attributes  */
-#if (FAUST_OUTPUTS > 0)                   /* omit 0 size array */
-    MYFLT*    aout[FAUST_OUTPUTS];        /* output buffers    */
-#endif
-#if (FAUST_INPUTS > 0)                    /* omit 0 size array */
-    MYFLT*    ain[FAUST_INPUTS];          /* input buffers     */
-#endif
-#if (FAUST_ACTIVES > 0)                   /* omit 0 size array */
-    MYFLT*    ktl[FAUST_ACTIVES];         /* controls          */
-#endif
+class InvokableGuitar : public ClangInvokableBase {
     dsp*      DSP;                        /* the Faust generated object */
     CSUI*     interface;                  /* do the mapping between CSound controls and DSP fields */
-    AUXCH     dspmem;                     /* aux memory allocated once to store the DSP object */
-    AUXCH     intmem;                     /* aux memory allocated once to store the interface object */
-/* Dummies to satisfy the compiler for "zero sized" arrays. */
-#if (FAUST_OUTPUTS == 0)
-    MYFLT*    aout[1];
-#endif
-#if (FAUST_INPUTS == 0)
-    MYFLT*    ain[1];
-#endif
-#if (FAUST_ACTIVES == 0)
-    MYFLT*    ktl[1];
-#endif
+public:
+    int init(CSOUND *csound, OPDS *opds_, MYFLT **outputs, MYFLT **inputs) override {
+        if (diagnostics_enabled) csound->Message(csound, "InvokableGuitar::init.\\n");
+        int result = OK;
+        result = ClangInvokableBase::init(csound, opds_, outputs, inputs);
+        DSP = new mydsp;
+        DSP->init(csound->GetSr(csound));
+        interface = new CSUI;
+        if (diagnostics_enabled) {
+            for (int i = 0, n = output_arg_count(); i < n; ++i) {
+                csound->Message(csound, "output[%3d]: %9.4f\\n", i, *outputs[i]);
+            }
+            for (int i = 0, n = input_arg_count(); i < n; ++i) {
+                csound->Message(csound, "input[%4d]: %9.4f\\n", i, *inputs[i]);
+            }
+        }
+        DSP->buildUserInterface(interface);
+        if (diagnostics_enabled) csound->Message(csound, "InvokableGuitar::init: result: %d\\n", result);
+        return result;
+    }
+    int kontrol(CSOUND *csound, MYFLT **outputs, MYFLT **inputs) override {
+        //csound->Message(csound, "InvokableGuitar::kontrol.\\n");
+        int result = OK;
+        //AVOIDDENORMALS;
+        // modularInterpInstrMIDI aa JJJJJJJJJJ
+        auto aout = outputs;
+        auto ain = inputs;
+        auto ktl = inputs;
+        // update all the control values
+        interface->copyfrom(ktl);
+        DSP->compute(csound->GetKsmps(csound), inputs, outputs);
+        return result;
+    }
 };
 
-/**
- * Creates a "aaakkkk" CSound description string. Note that
- * these string will never be released. Potential memory leak
- */
-static char* makeDescription(int numa, int numk = 0)
-{
-    char* str = (char*)malloc(numa+numk+1); // NEED TO BE CHANGED ?
-    if (str) {
-        for (int i = 0; i < numa; i++) str[i] = 'a';
-        for (int i = 0; i < numk; i++) str[numa+i] = 'J';
-        str[numa+numk] = 0;
-    }
-    return str;
-}
-
-/**
- * CSOUND callback that allocates and initializes
- * the FAUST generated DSP object and its CSound interface
- */
-static int init(CSOUND* csound, dataspace* p)
-{
-    if (p->dspmem.auxp == NULL)
-        csound->AuxAlloc(csound, sizeof(mydsp), &p->dspmem);
-
-    if (p->intmem.auxp == NULL)
-        csound->AuxAlloc(csound, sizeof(CSUI), &p->intmem);
-
-    p->DSP = new (p->dspmem.auxp) mydsp;
-    p->interface = new (p->intmem.auxp) CSUI;
-
-    if ((p->DSP == 0) | (p->interface == 0)) return NOTOK;
-
-    p->DSP->init((int)csound->GetSr(csound));
-    p->DSP->buildUserInterface(p->interface);
-
-    return OK;
-}
-
-/**
- * CSound callback that process the samples by updating
- * the controls values and calling the compute() method
- * of the DSP object. (Assume MYFLT = FAUSTFLOAT)
- */
-static int process32bits(CSOUND* csound, dataspace* p)
-{
-    AVOIDDENORMALS;
-
-    // update all the control values
-    p->interface->copyfrom(p->ktl);
-
-    p->DSP->compute(csound->GetKsmps(csound), p->ain, p->aout);
-    return OK;
-}
-
-extern "C" {
-    static OENTRY localops[] = {
-        {(char*)sym(OPCODE_NAME), sizeof(dataspace), 0, 3, makeDescription(FAUST_OUTPUTS), makeDescription(FAUST_INPUTS, FAUST_ACTIVES),
-            (SUBR)init, (SUBR)process32bits, NULL }
-    };
-}
-
-/********************END ARCHITECTURE SECTION (part 2/2)****************/
-
 #endif
 
-
-
-extern "C" int guitar_main(CSOUND *csound) {
-
+extern "C" {
+    int guitar_main(CSOUND *csound) {
+        int result = OK;
         csound->Message(csound, "This is \\"guitar_main\\" with csound: %p.\\n", csound);
-        csound->Message(csound, "sizeof(MYFLT): %ld sizeof(FAUSTFLOAT): %ld\\n", sizeof(MYFLT), sizeof(FAUSTFLOAT));
-        int result = csound->AppendOpcode(csound, "guitar", sizeof(dataspace), 0, 3, makeDescription(FAUST_OUTPUTS), makeDescription(FAUST_INPUTS, FAUST_ACTIVES), (SUBR)init, (SUBR)process32bits, NULL );
-        csound->Message(csound, "AppendOpcode for %s returned: %d\\n", (char*)sym(OPCODE_NAME), result);
-        /* Trying each of:
-            T_OPCODE0 = 275,
-            T_OPCODE0B = 276,
-            T_OPCODE = 277, Opcode compiles and instrument compiles, but running the instrument segfaults. Yet, running in valgrind succeeds.
-            T_OPCODEB = 278, Opcode compiles and instrument compiles, but running the instrument segfaults.
-            UDO_TOKEN = 279,
-        */
-        void *token = csound->add_token(csound, (char *)"guitar", 277);
-        csound->Message(csound, "add_token for %s returned: %p\\n", (char*)sym(OPCODE_NAME), token);
-        return result;
-        
+        return result;   
+    }     
+    InvokableGuitar *guitar_factory() {
+        InvokableGuitar *InvokableGuitarPtr = nullptr;
+        std::fprintf(stderr, "This is \\"guitar_factory\\".\\n");
+        InvokableGuitarPtr = new InvokableGuitar;
+        std::fprintf(stderr, "guitar_factory newed %p.\\n", InvokableGuitarPtr);
+        return InvokableGuitarPtr;
+    }
 };
 
 }}
 
-i_result clang_orc "guitar_main", S_guitar_source_code, "-g -O2 -std=c++14 -I/usr/local/include/csound -stdlib=libstdc++", "/usr/lib/gcc/x86_64-linux-gnu/9/libstdc++.so /usr/lib/gcc/x86_64-linux-gnu/9/libgcc_s.so /usr/lib/x86_64-linux-gnu/libm.so /usr/lib/x86_64-linux-gnu/libpthread.so"
-
-i_result compilestr {{
+i_result clang_compile "guitar_main", S_guitar_source_code, "-v -g -O2 -std=c++14 -I/usr/local/include/csound -I. -stdlib=libstdc++", "/usr/lib/gcc/x86_64-linux-gnu/9/libstdc++.so /usr/lib/gcc/x86_64-linux-gnu/9/libgcc_s.so /usr/lib/x86_64-linux-gnu/libm.so /usr/lib/x86_64-linux-gnu/libpthread.so"
 
 instr ClangGuitar
 
@@ -1546,7 +1460,7 @@ instr ClangGuitar
 //  Instrument definition patch ClangGuitar.
 //  Author: Michael Gogins
 //////////////////////////////////////////////
-k_ClangGuitar_level init -10
+k_ClangGuitar_level init 0
 k_ClangGuitar_midi_dynamic_range init 60
 k_ClangGuitar_bend init 0
 k_ClangGuitar_gain init .5
@@ -1588,7 +1502,7 @@ kp08_pluckPosition init i(k_ClangGuitar_pluckPosition)
 ip09_outGain init i(k_ClangGuitar_outGain)
 ip10_gate init 1
 
-a_left, a_right guitar ip01_freq, kp02_bend, ip03_gain, ip04_sustain, ip05_shape, ip06_scale, ip07_tapBody, kp08_pluckPosition, ip09_outGain, ip10_gate
+a_left, a_right clang_invoke "guitar_factory", 3, ip01_freq, kp02_bend, ip03_gain, ip04_sustain, ip05_shape, ip06_scale, ip07_tapBody, kp08_pluckPosition, ip09_outGain, ip10_gate
 a_signal = a_left + a_right
 a_declicking linsegr 0, i_attack, 1, i_sustain, 1, i_release, 0
 a_signal = a_signal * i_amplitude * a_declicking * k_gain
@@ -1598,10 +1512,6 @@ outleta "outleft", a_out_left
 outleta "outright", a_out_right
 prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
-
-}}
-
-prints "compilestr returned: %d\\n", i_result
 
 instr MasterOutput
 k_MasterOutput_level init 0
@@ -1626,7 +1536,6 @@ filename_endif:
 prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
-
 S_score_generator_code init {{
 
 #include <csound/csdl.h>
@@ -1640,7 +1549,7 @@ extern "C" int score_generator(CSOUND *csound) {
         char buffer[0x100];
         std::sprintf(buffer, "i 1 %d 2 %d 70 0 .25\\n", i + 4, 40 + (i % 73));
         csound->InputMessage(csound, buffer);
-        std::sprintf(buffer, "i 3 %f 2 %d 70 0 .75\\n", (double)i + 4.5, 46 + (i % 73));
+        std::sprintf(buffer, "i 2 %f 2 %d 70 0 .75\\n", (double)i + 4.5, 46 + (i % 73));
         csound->Message(csound, "inputting message %i: %s\\n", i, buffer);
         csound->InputMessage(csound, buffer);\
     }
@@ -1649,34 +1558,7 @@ extern "C" int score_generator(CSOUND *csound) {
 
 }}
 
-i_result clang_orc "score_generator", S_score_generator_code, "-g -O2 -std=c++14 -I/usr/local/include/csound -stdlib=libstdc++", "/usr/lib/gcc/x86_64-linux-gnu/9/libstdc++.so /usr/lib/gcc/x86_64-linux-gnu/9/libgcc_s.so /usr/lib/x86_64-linux-gnu/libm.so /usr/lib/x86_64-linux-gnu/libpthread.so"
-
-S_opcode_lister_code_2 init {{
-
-#include <csound/csdl.h>
-#include <cstdio>
-
-extern "C" int csoundNewOpcodeList(CSOUND *csound, opcodeListEntry **opcodelist);
-extern "C" void boo();
-
-extern "C" int opcode_lister_2(CSOUND *csound) {
-    csound->Message(csound, "Calling previously compiled `boo`:\\n");
-    boo();
-    csound->Message(csound, "Listing opcodes from C++...\\n");
-    opcodeListEntry *opcodes;
-    int count = csoundNewOpcodeList(csound, &opcodes);
-    csound->Message(csound, "Found %d opcode entries.\\n", count);
-    if (false) {
-        for (auto i = 0; i < count; ++i) {
-            csound->Message(csound, "opcode %4d: %-20s outypes: %20s intypes: %20s s\\n", (i + 1), opcodes[i].opname, opcodes[i].outypes, opcodes[i].intypes);
-        }
-    }
-    return 0;
-}
-
-}}
-
-i_result clang_orc "opcode_lister_2", S_opcode_lister_code_2, "-g -O2 -std=c++14 -I/usr/local/include/csound -stdlib=libstdc++", "/usr/lib/gcc/x86_64-linux-gnu/9/libstdc++.so /usr/lib/gcc/x86_64-linux-gnu/9/libgcc_s.so /usr/lib/x86_64-linux-gnu/libm.so /usr/lib/x86_64-linux-gnu/libpthread.so"
+i_result clang_compile "score_generator", S_score_generator_code, "-g -O2 -std=c++14 -I/usr/local/include/csound -stdlib=libstdc++", "/usr/lib/gcc/x86_64-linux-gnu/9/libstdc++.so /usr/lib/gcc/x86_64-linux-gnu/9/libgcc_s.so /usr/lib/x86_64-linux-gnu/libm.so /usr/lib/x86_64-linux-gnu/libpthread.so"
 
 </CsInstruments>
 <CsScore>

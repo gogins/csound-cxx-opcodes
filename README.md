@@ -29,10 +29,10 @@ Csound init time.
 The `clang_compile` opcode is an on-request-compiler (ORC) that enables 
 Csound to compile C or C++ source code, embedded in the Csound orchestra, to 
 a module of LLVM IR code; load and link that module; and call the Csound API, 
-other modules, or link libraries from that module. The ORC compiler is a type 
-of just-in-time (JIT) compiler, in which the actual translation to machine 
-language takes place whenever a symbol in the module is accessed for the first 
-time from the ORC compiler's LLVM execution session.
+other modules, or dynamic link libraries from that module. The ORC compiler is 
+a type of just-in-time (JIT) compiler, in which the actual translation to 
+machine language takes place whenever a symbol in the module is accessed for 
+the first time from the ORC compiler's LLVM execution session.
 
 ## Syntax
 ```
@@ -45,7 +45,7 @@ for an entry point function that must be defined in the module. This function
 must have the signature `extern "C" int (*)(CSOUND *csound)`. This function has 
 full access to the running instance of Csound via the Csound API members of the 
 CSOUND structure, as well as to all symbols in other LLVM modules, and all 
-exported symbols in all loaded link libraries.
+exported symbols in all loaded dynamic link libraries.
 
 *S_source_code* - C or C++ source code. Can be a multi-line string literal 
 enclosed in `{{` and `}}`. Please note, this string is a "heredoc" and, thus, 
@@ -58,12 +58,12 @@ on the compiler command line. Can be a multi-line string literal enclosed in
 `{{` and `}}`. If the `-v` option is present, additional diagnostics are 
 enabled for the `clang_compile` and `clang_invoke` opcodes.
 
-*S_link_libraries* - Optional space-delimited list of system or user link 
-libraries, serving the same function as `-l` options for a standalone 
-compiler. Here, however, each link library must be specified as a fully 
-qualified filepath. Each library will be loaded and linked by LLVM before the 
-user's code is JIT compiled. Can be a multi-line string literal enclosed in 
-`{{` and `}}`. 
+*S_link_libraries* - Optional space-delimited list of system or user dynamic 
+link libraries, serving the same function as `-l` options for a standalone 
+compiler. Here, however, each dynamic link library must be specified as a 
+fully qualified filepath. Each library will be loaded and linked by LLVM 
+before the user's code is JIT compiled. Can be a multi-line string literal 
+enclosed in `{{` and `}}`. 
 
 *i_result* - 0 if the code has been compiled and executed succesfully; 
 non-0 if there is an error. Clang and LLVM diagnostics are printed to stderr.
@@ -80,10 +80,10 @@ instrument instance.
 Non-standard include directories and compiler options may be used, but must be 
 defined in `S_compiler_options`.
 
-Libraries on which the module depends may be used, whether system libraries or 
-user libraries, but must be specified as fully qualified filepaths in 
-`S_link_libraries`. The usual compiler option `-l` does not work in this 
-context.
+Dynamic link libraries on which the module depends may be used, whether system 
+libraries or user libraries, but must be specified as fully qualified 
+filepaths in `S_link_libraries`. The usual compiler option `-l` does not work 
+in this context.
 
 __**PLEASE NOTE**__: Many shared libraries use the symbol `__dso_handle`, but 
 this is not defined in the ORC compiler's startup code. To work around this, 
@@ -105,8 +105,8 @@ running Csound process, just like any other C/C++ module.
 
 The entry point function may call any Csound API functions that are members of 
 the `CSOUND` struct, define classes and structs, call any public symbol in any 
-loaded link library, or indeed do anything at all that can be done with C or 
-C++ code.
+loaded dynamic link library, or indeed do anything at all that can be done 
+with C or C++ code.
 
 For example, the module may use an external shared library to assist with 
 algorithmic composition, then translate the generated score to a Csound score, 
