@@ -26,10 +26,7 @@ The `clang_invoke` opcode was inspired by the
 # clang_compile
 
 `clang_compile` - Compiles C/C++ source code into a module, and executes it at
-Csound performance time. The compiled module is callable in the running Csound 
-performance, can call into the running Csound performance using the Csound 
-API, and can call exported functions in other modules compiled by 
-`clang_compile`, or in any system or user link libraries that have been loaded.
+Csound performance time. 
 
 ## Description
 
