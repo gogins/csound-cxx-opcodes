@@ -31,14 +31,28 @@ extern "C" int csound_main(CSOUND *csound) {
     return 0;
 };
 
+class Hello : public ClangInvokable {
+    virtual override init(CSOUND *csound, OPDS *opds, thread, MYFLT **outputs, MYFLT **inputs) {
+        csound->Message("And.. Hello, world! This is clang_invoke saying hi.\\n");
+        return OK;
+    }
+}
 
+Hello *hello_factory() {
+    return new Hello();
+:
 
 }}
 
 gi_result clang_compile "csound_main", gS_source_code, "-std=c++14 -I/usr/local/include/csound -stdlib=libstdc++", "/usr/lib/gcc/x86_64-linux-gnu/9/libstdc++.so /usr/lib/gcc/x86_64-linux-gnu/9/libgcc_s.so /usr/lib/x86_64-linux-gnu/libm.so /usr/lib/x86_64-linux-gnu/libpthread.so"
 
+instr 1
+    clang_invoke "hello_factory", 1
+endin
+
 </CsInstruments>
 <CsScore>
 f 0 30
+1 5 5
 </CsScore>
 </CsoundSynthesizer>
