@@ -32,8 +32,9 @@ extern "C" int csound_main(CSOUND *csound) {
 };
 
 class Hello : public ClangInvokable {
-    virtual override init(CSOUND *csound, OPDS *opds, thread, MYFLT **outputs, MYFLT **inputs) {
-        csound->Message("And.. Hello, world! This is clang_invoke saying hi.\\n");
+    public:
+    virtual int init(CSOUND *csound, OPDS *opds, thread, MYFLT **outputs, MYFLT **inputs) {
+        csound->Message(csound, "And.. Hello, world! This is clang_invoke saying hi.\\n");
         return OK;
     }
 }
