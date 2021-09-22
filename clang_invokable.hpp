@@ -1,13 +1,14 @@
 #pragma once
 
 #include <csdl.h>
+#include <cstring>
 
 /**
  * Defines the pure bstract interface implemented by Clang modules to be 
  * called by Csound using the `clang_invoke` opcode.
  */
 struct ClangInvokable {
-	virtual ~ClangInvokable() = 0;
+	virtual ~ClangInvokable() {};
 	/**
 	 * Called once at init time. The inputs are the same as the 
 	 * parameters passed to the `clang_invoke` opcode. The outputs become 
@@ -16,7 +17,7 @@ struct ClangInvokable {
 	 * `opds` argument can be used to find many things about the invoking 
      * opcde and its enclosing instrument.
 	 */
-	virtual int init(CSOUND *csound, const OPDS *opds, MYFLT **outputs, MYFLT **inputs) = 0;
+	virtual int init(CSOUND *csound, OPDS *opds, MYFLT **outputs, MYFLT **inputs) = 0;
 	/**
 	 * Called once every kperiod. The inputs are the same as the 
 	 * parameters passed to the `clang_invoke` opcode. The outputs become 
@@ -39,29 +40,28 @@ struct ClangInvokable {
 class ClangInvokableBase : public ClangInvokable {
     public:
         virtual ~ClangInvokableBase() {};
-        virtual int init(CSOUND *csound_, const OPDS *opds_, MYFLT **outputs, MYFLT **inputs) {
+        int init(CSOUND *csound_, OPDS *opds_, MYFLT **outputs, MYFLT **inputs) override {
             int result = OK;
             csound = csound_;
-            // Make a flat copy of the invoking opcode's OPDS header.
-            std::memcpy(&opds, opds_, sizeof(OPDS));
+            opds = opds_;
             return result;
         }
-        virtual int kontrol(CSOUND *csound_, MYFLT **outputs, MYFLT **inputs) {
+        int kontrol(CSOUND *csound_, MYFLT **outputs, MYFLT **inputs) override {
             int result = OK;
             return result;
         }
-        virtual int noteoff(CSOUND *csound) 
+        int noteoff(CSOUND *csound) override 
         {
             int result = OK;
             return result;
         }
         uint32_t kperiodOffset() const
         {
-            return opds.insdshead->ksmps_offset;
+            return opds->insdshead->ksmps_offset;
         }
         uint32_t kperiodEnd() const
         {
-            uint32_t end = opds.insdshead->ksmps_no_end;
+            uint32_t end = opds->insdshead->ksmps_no_end;
             if (end) {
                 return end;
             } else {
@@ -70,15 +70,15 @@ class ClangInvokableBase : public ClangInvokable {
         }
         uint32_t ksmps() const
         {
-            return opds.insdshead->ksmps;
+            return opds->insdshead->ksmps;
         }
         uint32_t output_arg_count()
         {
-            return (uint32_t)opds.optext->t.outArgCount;
+            return (uint32_t)opds->optext->t.outArgCount;
         }
         uint32_t input_arg_count()
         {
-            return (uint32_t)opds.optext->t.inArgCount;
+            return (uint32_t)opds->optext->t.inArgCount;
         }
         void log(const char *format,...)
         {
@@ -108,6 +108,6 @@ class ClangInvokableBase : public ClangInvokable {
             }
         }
     protected:
-        OPDS opds;
+        OPDS *opds = nullptr;
         CSOUND *csound = nullptr;
 };

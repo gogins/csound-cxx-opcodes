@@ -1,36 +1,32 @@
 # Clang Opcodes
 
 The Clang opcodes embed the Clang/LLVM just-in-time C/C++ compiler into Csound. 
-This enables a Csound orchestra to contain C/C++ source code, compile and link it, 
-and call it during the Csound performance.
+This enables a Csound orchestra to include C/C++ source code, compile and link 
+it, and call it during the Csound performance.
 
-The `clang_compile` opcode compiles C or C++ source code, embedded in a Csound 
-orchestra, at performance time. The result is a compiled module of low level 
-virtual machine (LLVM) intermediate representation (IR) code. When any symbol in 
-that module is accessed, the LLVM on-request compiler (ORC) translates the IR 
-code to machine language, resolves symbols and relocations, and in short loads 
-and links the code just like any other compiled C or C++ object.
+The `clang_compile` opcode compiles C or C++ source, embedded in a Csound 
+orchestra, into an executable module, and executes it at init time.
 
 The `clang_invoke` opcode enables a compiled module to be invoked from Csound 
-code during the Csound performance. Commonly, this is used to implement new 
-Csound opcodes in the Csound orchestra that are more powerful, and run faster, 
-than user-defined opcodes. It is also used to generate scores or control 
-channel values at the beginning of, or during, the performance.
+code during the Csound performance, either at init time, or at k-rate. 
+Commonly, this is used to implement new Csound opcodes directly in C++ from 
+the Csound orchestra. It is also used to generate scores or control channel 
+values at the beginning of, or during, the performance.
 
 The `clang_compile` opcode uses the [Clang library and LLVM](https://llvm.org/), 
 and is based on the 
 ["Clang C Interpreter Example"](https://github.com/llvm/llvm-project/tree/main/clang/examples/clang-interpreter). 
 The `clang_invoke` opcode was inspired by the 
-[`faustgen`](https://csound.com/docs/manual/faustgen.html) opcode.
+[`faustgen`](https://csound.com/docs/manual/faustgen.html) opcodes.
 
 # clang_compile
 
 `clang_compile` - Compiles C/C++ source code into a module, and executes it at
-Csound performance time. 
+Csound init time. 
 
 ## Description
 
-The `clang_compile` opcode provides an on-request-compiler (ORC) that enables 
+The `clang_compile` opcode is an on-request-compiler (ORC) that enables 
 Csound to compile C or C++ source code, embedded in the Csound orchestra, to 
 a module of LLVM IR code; load and link that module; and call the Csound API, 
 other modules, or link libraries from that module. The ORC compiler is a type 
@@ -60,26 +56,26 @@ it can be as large as needed.
 *S_compiler_options* - Standard gcc/clang compiler options, as would be passed 
 on the compiler command line. Can be a multi-line string literal enclosed in 
 `{{` and `}}`. If the `-v` option is present, additional diagnostics are 
-enabled for the `clang_compile` opcode itself.
+enabled for the `clang_compile` and `clang_invoke` opcodes.
 
 *S_link_libraries* - Optional space-delimited list of system or user link 
 libraries, serving the same function as `-l` options for a standalone 
 compiler. Here, however, each link library must be specified as a fully 
 qualified filepath. Each library will be loaded and linked by LLVM before the 
-user's code is JIT compiled. Can be a multi-line string literal enclosed in `{{` 
-and `}}`. 
+user's code is JIT compiled. Can be a multi-line string literal enclosed in 
+`{{` and `}}`. 
 
 *i_result* - 0 if the code has been compiled and executed succesfully; 
 non-0 if there is an error. Clang and LLVM diagnostics are printed to stderr.
 
 ## Performance
 
-Compilation and execution occur at initialization time only. Therefore, the 
-compiled module's entry point is only called after `csoundStart` has been 
-called. If the compilation is done in the orchestra header, i.e. in `instr 0`, 
-the execution occurs during Csound's init pass for `instr 0`. If the 
-compilation is done from a regular Csound instrument, the execution occurs 
-during Csound's init pass for that particular instrument instance.
+The module is compiled and executed at Csound's initialization time, which 
+comes after `csoundStart` has been called. If the compilation is done in the 
+orchestra header, i.e. in `instr 0`, the execution occurs during Csound's init 
+pass for `instr 0`. If the compilation is done from a regular Csound 
+instrument, the execution occurs during Csound's init pass for that particular 
+instrument instance.
 
 Non-standard include directories and compiler options may be used, but must be 
 defined in `S_compiler_options`.
@@ -89,9 +85,9 @@ user libraries, but must be specified as fully qualified filepaths in
 `S_link_libraries`. The usual compiler option `-l` does not work in this 
 context.
 
-PLEASE NOTE: Many shared libraries use the symbol `__dso_handle`, but this is 
-not defined in the ORC compiler's startup code. To work around this, manually 
-define it in your C/C++ code like this:
+__**PLEASE NOTE**__: Many shared libraries use the symbol `__dso_handle`, but 
+this is not defined in the ORC compiler's startup code. To work around this, 
+manually define it in your C/C++ code like this:
 ```
 void* __dso_handle = (void *)&__dso_handle;
 ```
@@ -103,12 +99,14 @@ extern "C" int(*)(CSOUND *csound);
 ```
 Once the `clang_compile` opcode has compiled the module, Csound will immediately 
 call the entry point function in that module. At that very time, the LLVM ORC 
-compiler will translate the IR code in the module to machine language, resolve 
-symbols, perform relocations, and link it into the running Csound process. 
+compiler will translate the IR code in the module to machine language, perform 
+relocations, resolve symbols, and otherwise load and link the module into the 
+running Csound process, just like any other C/C++ module.
 
-The entry point function may call the Csound API functions that are members of 
-the `CSOUND` struct, define classes and structs, or do anything at all else that 
-can be done with C or C++ code.
+The entry point function may call any Csound API functions that are members of 
+the `CSOUND` struct, define classes and structs, call any public symbol in any 
+loaded link library, or indeed do anything at all that can be done with C or 
+C++ code.
 
 For example, the module may use an external shared library to assist with 
 algorithmic composition, then translate the generated score to a Csound score, 
@@ -122,21 +120,10 @@ this works and how to use it.
 
 ## Example
 
-The `csound clang_example.csd` file uses the `clang_compile` opcode to 
-compile a guitar opcode and instrument, a reverb opcode and instrument, 
-and a score generating instrument. For the sake of clarity, although all of 
-this code could be implemented in one module, the following separate modules 
-are defined:
-
-1. A physically modelled guitar opcode, written in C++, which is then 
-   wrapped in a Csound instrument definition.
-2. A reverb opcode, written in C++, which is then wrapped in a Csound instrument 
-   definition.
-3. A score generating function, written in C++.
-   
-The Csound orchestra in this piece uses the signal flow graph opcodes to connect 
-the guitar instrument to the reverb instrument, and to connect the reverb 
-instrument to an output instrument.
+The `clang_hello.csd` file uses the `clang_compile` opcode to demonstrate and  
+test the basic funtionality of the `clang_compile` and `clang_invoke` opcodes. 
+This is a bare bones test that does just enough to prove that things work, and 
+no more.
 
 # clang_invoke
 
@@ -238,6 +225,24 @@ time, the ClangInvokable should release any system resources or memory
 that it has acquired.
 
 The ClangInvokable instance is then deleted by the `clang_invoke` opcode.
+
+## Example
+
+The `clang_example.csd` file uses the `clang_compile` opcode to 
+compile a guitar opcode and instrument, a reverb opcode and instrument, 
+and a score generating instrument. For the sake of clarity, although all of 
+this code could be implemented in one module, the following separate modules 
+are defined:
+
+1. A physically modelled guitar opcode, written in C++, which is then 
+   wrapped in a Csound instrument definition.
+2. A reverb opcode, written in C++, which is then wrapped in a Csound instrument 
+   definition.
+3. A score generating function, written in C++.
+   
+The Csound orchestra in this piece uses the signal flow graph opcodes to connect 
+the guitar instrument to the reverb instrument, and to connect the reverb 
+instrument to an output instrument.
 
 # Installation
 

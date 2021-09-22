@@ -63,6 +63,11 @@
 using namespace clang;
 using namespace clang::driver;
 
+/**
+ * Diagnostics are global for all these opcodes.
+ */
+static bool diagnostics_enabled;
+
 llvm::ExitOnError exit_on_error;
 
 // This function isn't referenced outside its translation unit, but it
@@ -110,12 +115,12 @@ private:
     {
         llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
         main_jit_dylib.addGenerator(std::move(process_symbols_generator));
-        std::fprintf(stderr, "####### clang_compile: main_jit_dylib: name: %s\n", main_jit_dylib.getName().c_str());
+        if (diagnostics_enabled) std::fprintf(stderr, "####### clang_compile: main_jit_dylib: name: %s\n", main_jit_dylib.getName().c_str());
     }
 public:
     ~JITCompiler()
     {
-        std::fprintf(stderr, "####### clang_compile: deleting JITCompiler %p and ending execution session.\n", this);
+        if (diagnostics_enabled) std::fprintf(stderr, "####### clang_compile: deleting JITCompiler %p and ending execution session.\n", this);
         if(auto error = execution_session.endSession()) {
             execution_session.reportError(std::move(error));
         }
@@ -194,26 +199,26 @@ extern "C" {
 };
 
 /**
- * Thread-safe facility for storing and removing modules that have been
- * compiled with clang.
+ * Thread-safe facility for storing and removing compilers used in different 
+ * Csound performances.
  */
-struct clang_modules_for_csounds_t
+struct clang_compilers_for_csounds_t
 {
     std::mutex mutex_;
-    std::multimap<CSOUND *, std::shared_ptr<llvm::Module> > clang_modules_for_csounds_;
+    std::multimap<CSOUND *, std::shared_ptr<llvm::Module> > clang_compilers_for_csounds_;
     void add(CSOUND *csound, std::shared_ptr<llvm::Module> module) {
         std::lock_guard<std::mutex> guard(mutex_);
-        clang_modules_for_csounds_.insert({csound, module});
+        clang_compilers_for_csounds_.insert({csound, module});
     }
     void del(CSOUND *csound) {
         std::lock_guard<std::mutex> guard(mutex_);
-        clang_modules_for_csounds_.erase(csound);
+        clang_compilers_for_csounds_.erase(csound);
     }
 };
 
-static clang_modules_for_csounds_t &clang_modules_for_csounds() {
-    static clang_modules_for_csounds_t clang_modules_for_csounds_;
-    return clang_modules_for_csounds_;
+static clang_compilers_for_csounds_t &clang_compilers_for_csounds() {
+    static clang_compilers_for_csounds_t clang_compilers_for_csounds_;
+    return clang_compilers_for_csounds_;
 };
 
 class ClangCompile : public csound::OpcodeBase<ClangCompile>
@@ -232,8 +237,19 @@ public:
      */
     int init(CSOUND *csound)
     {
+    	diagnostics_enabled = false;
+        // Parse the compiler options.
+        auto compiler_options = csound->strarg2name(csound, (char *)0, S_compiler_options->data, (char *)"", 1);
+        std::vector<const char*> args;
+        std::vector<std::string> tokens;
+        tokenize(compiler_options, ' ', tokens);
+        for (int i = 0; i < tokens.size(); ++i) {
+            if (tokens[i] == "-v") {
+                diagnostics_enabled = true;
+            }
+            args.push_back(tokens[i].c_str());
+        }
         //std::fprintf(stderr, "ClangCompile::init: line %d\n", __LINE__);
-        auto diagnostics_enabled = false;
         auto entry_point = csound->strarg2name(csound, (char *)0, S_entry_point->data, (char *)"", 1);
         if (diagnostics_enabled) csound->Message(csound, "####### clang_compile: entry_point: %s\n", entry_point);
         // Create a temporary file containing the source code.
@@ -247,21 +263,10 @@ public:
         auto file_descriptor = mkstemps(filepath, 4);
         auto file_ = fdopen(file_descriptor, "w");
         std::fwrite(source_code, strlen(source_code), sizeof(source_code[0]), file_);
-        std::vector<const char*> args;
         std::fclose(file_);
         args.push_back("clang_opcode");
         args.push_back(filepath);
-        // Parse the compiler options.
-        auto compiler_options = csound->strarg2name(csound, (char *)0, S_compiler_options->data, (char *)"", 1);
-        std::vector<std::string> tokens;
-        tokenize(compiler_options, ' ', tokens);
-        for (int i = 0; i < tokens.size(); ++i) {
-            if (tokens[i] == "-v") {
-                diagnostics_enabled = true;
-            }
-            args.push_back(tokens[i].c_str());
-        }
-        // Compile the source code to a module, and call its
+	    // Compile the source code to a module, and call its
         // csound_main entry point. This just needs to be some symbol in
         // the process; C++ doesn't allow taking the address of ::main.
         void *main_address = (void*)(intptr_t) GetExecutablePath;
@@ -369,7 +374,7 @@ public:
             //~ // On success, store the compiled module until Csound exits.
             //~ std::shared_ptr<llvm::Module> object_module = std::move(module);
             //~ if (object_module) {
-            //~ clang_modules_for_csounds().add(csound, object_module);
+            //~ clang_compilers_for_csounds().add(csound, object_module);
             //~ }
         }
         //std::fprintf(stderr, "ClangCompile::init ended at: line %d\n", __LINE__);
@@ -401,14 +406,19 @@ public:
         int result = OK;
         // Look up factory.
         auto invokable_factory_name = csound->strarg2name(csound, (char *)0, S_invokable_factory->data, (char *)"", 1);
-        auto invokable_factory = (ClangInvokable *(*)()) exit_on_error(jit_compiler->getSymbolAddress(invokable_factory_name));
-        // Create instance.clang_invokable.reset(
-        clang_invokable.reset(invokable_factory());
-        if (thread == 1) {
+        if (diagnostics_enabled) csound->Message(csound, "####### clang_invoke::init: factory name: \"%s\"\n", invokable_factory_name);
+        // Create instance.
+	    auto invokable_factory = (ClangInvokable *(*)()) exit_on_error(jit_compiler->getSymbolAddress(invokable_factory_name));
+        if (diagnostics_enabled) csound->Message(csound, "####### clang_invoke::init: factory function: %p\n", invokable_factory);
+        auto instance = invokable_factory();
+      	if (diagnostics_enabled) csound->Message(csound, "####### clang_invoke::init: instance: %p\n", instance);
+	    clang_invokable.reset(instance);
+        if (thread == 2) {
             return result;
         }
         // Invoke the instance.
         result = clang_invokable->init(csound, &opds, outputs, inputs);
+        if (diagnostics_enabled) csound->Message(csound, "####### clang_invoke::init: invokable::init: result: %d\n", result);
         return result;
     }
     int kontrol(CSOUND *csound)
@@ -425,7 +435,8 @@ public:
         int result = OK;
         result = clang_invokable->noteoff(csound);
         clang_invokable = nullptr;
-        return result;
+	if (diagnostics_enabled) csound->Message(csound, "####### clang_invoke::noteoff: invokable::noteoff: result: %d\n", result);
+    	return result;
     }
 };
 
@@ -448,8 +459,8 @@ extern "C" {
                                           sizeof(ClangInvoke),
                                           0,
                                           3,
-                                          (char *)"mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm",
-                                          (char *)"M",
+                                          (char *)"****************************************",
+                                          (char *)"SiN",
                                           (int (*)(CSOUND*,void*)) ClangInvoke::init_,
                                           (int (*)(CSOUND*,void*)) ClangInvoke::kontrol_,
                                           (int (*)(CSOUND*,void*)) 0);
@@ -458,7 +469,7 @@ extern "C" {
 
     PUBLIC int csoundModuleDestroy_clang_opcodes(CSOUND *csound)
     {
-        //~clang_modules_for_csounds().del(csound);
+        //~clang_compilers_for_csounds().del(csound);
         llvm::llvm_shutdown();
         return 0;
     }

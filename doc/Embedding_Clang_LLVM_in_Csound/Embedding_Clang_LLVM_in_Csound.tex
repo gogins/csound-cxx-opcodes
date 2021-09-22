@@ -1,0 +1,231 @@
+ %
+%-----------------------------------------------------------
+%% Computer Music Journal LaTeX template
+%%
+%% September  2009
+%% Author: Cornelia Kreutzer, University of Limerick
+
+
+
+%---Document preamble
+%
+\documentclass[letterpaper, 12pt]{article}
+
+
+\usepackage{cmjStyle} %use CMJ style
+\usepackage{natbib} %natbib package, necessary for customized cmj BibTeX style
+\bibpunct{(}{)}{;}{a}{}{, } %adapt style of references in text
+\doublespacing
+\raggedright % use this to remove spacing and hyphenation oddities
+\setlength{\parskip}{2ex}
+\parindent 24pt
+\urlstyle{same} % make url tags have the same font
+\setcounter{secnumdepth}{-1} % remove section numbering
+\usepackage{epstopdf}
+\usepackage{amsmath,amssymb,amsbsy,bm,upgreek,nicefrac}
+\usepackage{todonotes,microtype}
+
+% Use the Figures subfolder for image files
+\graphicspath{{./Figures/}}
+
+
+%% ----------------------------------------------------------------------------------------------------------------------------------------
+%% CMJ page headers
+%% For initial submission use \lhead{Anonymous}
+%% On acceptance for publication, use real author surnames for \lhead modeled on the following examples
+%%		One author:	\lhead{\small Keislar}
+%%		Two authors:	\lhead{\small Keislar and Castine}
+%%		Three authors:	\lhead{\small Keislar, Castine, and Rundall}
+%%		Four or more:	\lhead{\small Keislar et al.}
+%%
+\lhead{\small Anonymous}
+
+
+%% The package endfloat moves all floats (figures, tables...) to the end of the article, as required for the final version of a CMJ article.
+%% Leave this package commented out for initial submission, but uncomment it and the following callout commands for the final version. 
+% \usepackage{endfloat}
+% \renewcommand{\figureplace}{%
+%	\begin{center}
+%		\textbf{<<TYPE: INSERT \figurename~\thepostfig\ ABOUT HERE.>>}
+%	\end{center}}
+% \renewcommand{\tableplace}{%
+%	\begin{center}
+%		\textbf{<<TYPE: INSERT \tablename~\theposttbl\ ABOUT HERE.>>}
+%	\end{center}}
+
+%---Document----------
+\begin{document}
+
+{\cmjTitle Embedding Clang/LLVM in Csound}
+\vspace*{24pt}
+
+(In the initial submission, omit all the following author information to ensure anonymity during peer review.
+On final submission please make sure that the author address is a complete, functioning postal address.
+Post will be sent to that address.)
+
+% Author: name
+{\cmjAuthor Michael Gogins}	% List all authors here
+							% e.g.:
+							% {\cmjAuthor Doug Keislar, Peter Castine, and Jake Rundall}
+ 
+% Author: address
+\begin{cmjAuthorAddress}
+	Irreducible Productions\\
+	1576 Crescent Valley Road\\
+	Bovina Center, New York 13740 USA\\		% Adapt as needed for non-US addresses
+	michael.gogins@gmail.com
+\end{cmjAuthorAddress}
+
+
+\begin{abstract}
+I present new opcodes for the Csound computer music system that embed 
+the Clang/LLVM on-request compiler (ORC). C or C++ source code may be 
+embedded in a regular Csound orchestra file, compiled by the \texttt{clang\_compile} opcode, and invoked during performance by the 
+\texttt{clang\_invoke} opcode. The technology and patterns implemented 
+here could be adapted for use in other computer music systems that are 
+written in C or C++.
+\end{abstract}
+
+\section{<<BEGIN ARTICLE>>}
+Introductory body text comes here. 
+Just replace the text of the template with the text for your article.
+Introductory text does not normally have a printed section heading, the default heading "begin article" in double angle brackets is an instruction for the typesetter and should be left as it stands.
+Exception: only if the introductory remarks contain subsections (with level-B headings), then the entire introductory section gets a level-A heading, typically ``Introduction'' or perhaps something more exciting.
+
+Starting each sentence on a new line in the LaTeX source can be helpful for the editors in preparing an article for submission to MIT Press.
+
+Use of additional packages, beyond what are included in this template and the cmjStyle.sty (and cmjStyle-pdftex.sty) documents should not be necessary and is discouraged. 
+
+For style questions not answered here, visit http://mitpress.mit.edu/cmj to see the submission guidelines and previously published articles.  
+Most issues include a freely downloadable feature article.  
+Questions may be directed to cmj-editor@mit.edu; please put [CMJ MS] in the subject line.
+
+\parskip 18pt
+
+%------------------------------------------------
+%
+% format for Heading-A style
+\section{Format for Heading-A Style}
+
+Insert body text here.  
+Use the Heading-A style for headings of major sections.
+Note that CMJ does not use section numbers for any level of heading.
+
+\vspace*{24pt}
+
+% format for Heading-B style
+\subsection{Format for Heading-B Style}
+
+Insert body text here.  
+Use the Heading-B style for headings of subsections.
+
+% format for Heading-C style
+\subsubsection{Format for Heading-C Style}
+
+Insert body text here.
+Use the Heading-C style for headings of sub-subsections.
+
+In the initial manuscript submission, you are encouraged to include figures (with captions) inline with the text, for ease of reading during the review process. 
+All figures will need to be grayscale (i.e.,~monochrome) and sufficiently high-resolution for print (300 dpi), at the latest by your final submission.
+Figures must be referenced in the text, either directly in the text or as a parenthetic aside, e.g.~``(see Figure~\ref{fig:myFigure}).''
+Do not reference figures with terms of relative location like ``above'' or ``below,'' however.
+When an article is typeset, figures are never embedded in the text and you do not know exactly where the image will appear in relation to your text.
+For the review process, simply place the LaTeX figure definition immediately after the first paragraph referring to the image.
+
+% include figures in text with captions for initial submission, like this:
+\begin{figure}[]
+\begin{center}
+\includegraphics{myFigure}
+	% No need for file extensions here! 
+	% This is useful at final submission, when MIT Press and LaTeX need different image formats for the same image
+	% This template is already set up to look for image files in the Figures subdirectory, so that's where to put your image files. 
+\caption{Insert Figure caption here.}
+\label{fig:myFigure}
+\end{center}
+\end{figure}
+
+Tables must also be cited in the text, as with Table~\ref{tab:myTable}. Tables in \emph{CMJ} do not have ``captions'' as such. A table has a title, which should be concise. If absolutely necessary for understanding the table, additional information can be included in a footer, although that is not required. When typeset, tables will not have vertical rules.
+
+% include tables in text with captions for initial submission, like this:
+\begin{table}[]
+\caption{Sample Table with a Title}
+\centering
+\begin{tabular}{lccr}
+  \hline
+  \textbf{Column} & \textbf{Headers} & \textbf{Might Look} & \textbf{Like This}  \\
+  \hline
+  one & 2 & 3 & IV \\
+  five & 6 & 7 & VIII \\
+  nine & 10 & 11 & XII \\
+   \hline
+\end{tabular}
+\caption*{\textnormal{{\small Although table footers are often not necessary, the source code shows how to generate one using an unnumbered caption in LaTeX.}}}
+\label{tab:myTable}
+\end{table}%
+
+
+For the final version after the manuscript has been accepted, however, all figures and tables should be moved to the end.
+The recommended way to achieve this is by enabling the package {\tt endfloat} as noted in the comments at the of top the LaTeX template file.
+
+Also note that for the final version of your article, MIT Press requires grayscale versions of your artwork in either EPS (vector image) or TIFF (raster) formats.
+In general, LaTeX only supports PDF, PNG, and JPEG formats for images.
+The upshot of this is that authors using LaTeX need to submit images in two formats.
+The good news is that most LaTeX implementations provide utilities for converting from the formats used by MIT Press to those used by LaTex.
+
+% equations
+You can insert equations inline with the text like this:
+
+\begin{equation}
+	\label{radupdate}
+		\Psi_{N}^{n+1} = m_{N}^{(-)}\Psi_{N-1}^{n}+m_{N}^{(0)}\Psi_{N}^{n} + q_{N}\Psi_{N}^{n-1}
+\end{equation}
+where
+\begin{eqnarray*}
+	m_{N}^{(-)} &=& \frac{\lambda^2}{2\tau}\left(S_{N+1}+2S_{N}+S_{N-1}\right)\\
+	m_{N}^{(0)} &=& \frac{1}{\tau}\left(2-\frac{\lambda^2}{2}\left(S_{N+1}+2S_{N}+S_{N-1}\right)\right)\\
+	q_{N} &=& \frac{1}{\tau}\left(\frac{\gamma^2 k^2}{2h}\left(S_{N+1}+S_{N}\right)\left(\frac{\alpha_{1}}{k}-	\alpha_{2}\right)-1\right)
+\end{eqnarray*}
+and where 
+\begin{equation*}
+	\tau = \frac{\gamma^2 k^2}{2h}\left(S_{N+1}+S_{N}\right)\left(\frac{\alpha_{1}}{k}+\alpha_{2}\right)+1
+\end{equation*}
+
+% Use this environment for inserting source code examples.
+% Note, that this will print out text in the document exactly as you type it here in the .tex file. That means you can add empty spaces, tabs, blank lines here and they will be printed out like this in the document.). 
+%For more information check out the LaTeX-Package 'fancyvbr' documentation
+%
+\begin{Verbatim}[fontfamily=courier, xleftmargin=\parindent]
+Use this style for program code, 
+for example:
+main() {
+    printf("Hello World\n");    
+}
+Extended code examples that are likely
+to be too wide for the two-column page
+layout used by CMJ should be prepared
+as figures, using text rather than an
+image format. You don't need to worry
+about this for the initial submission, 
+but it will become important after 
+acceptance for the final submission.
+\end{Verbatim}
+
+%use of references
+Some examples for the use of references in the text follow.
+%author name in sentence, single authors
+Single authors, listed separately in text: for instance, \citet*{Ano08} or \citet*{Bele68}.
+%author name in sentence, multiple authors
+Multiple authors, in text: \citet*{VeRo00}; \citet*{AtDa04}.
+Parenthetic citations: \citep*{AtDa04, Ther99}.
+Citation as a single parenthetic note, including supplementary information, \citep*[see also][which includes detailed diagrams]{Zica02}.
+Please don't type parentheses around a \texttt{citet*{}} directive when you want a citation in parentheses---that's what the \texttt{citep*{}} family of directives are there for.
+And it is preferable to use the starred versions of BibTeX directives (\texttt{citet*\{\}} rather than \texttt{citet\{\}}, etc.)
+
+Please consult the enclosed .bst file and the BibTeX documentation for further examples. 
+
+
+%References
+\bibliographystyle{cmj}
+\bibliography{EmbeddingClangLLVMinCsound}
+
+\end{document}
