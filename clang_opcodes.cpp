@@ -444,7 +444,7 @@ extern "C" {
                                           (int (*)(CSOUND*,void*)) 0,
                                           (int (*)(CSOUND*,void*)) 0);
         status += csound->AppendOpcode(csound,
-                                          (char *)"clank_invoke",
+                                          (char *)"clang_invoke",
                                           sizeof(ClangInvoke),
                                           0,
                                           3,
