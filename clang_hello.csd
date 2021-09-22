@@ -40,7 +40,7 @@ class Hello : public ClangInvokable {
 
 Hello *hello_factory() {
     return new Hello();
-:
+}
 
 }}
 
