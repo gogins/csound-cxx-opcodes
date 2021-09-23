@@ -1454,63 +1454,65 @@ extern "C" {
 
 i_result clang_compile "guitar_main", S_guitar_source_code, "-v -g -O2 -std=c++14 -I/usr/local/include/csound -I. -stdlib=libstdc++", "/usr/lib/gcc/x86_64-linux-gnu/9/libstdc++.so /usr/lib/gcc/x86_64-linux-gnu/9/libgcc_s.so /usr/lib/x86_64-linux-gnu/libm.so /usr/lib/x86_64-linux-gnu/libpthread.so"
 
+gk_ClangGuitar_level chnexport "gk_ClangGuitar_level", 3
+gk_ClangGuitar_shape chnexport "gk_ClangGuitar_shape", 3
+gk_ClangGuitar_scale chnexport "gk_ClangGuitar_scale", 3
+gk_ClangGuitar_pluck_position chnexport "gk_ClangGuitar_pluck_position", 3
+gk_ClangGuitar_gain chnexport "gk_ClangGuitar_gain", 3
+gk_ClangGuitar_otuGain chnexport "gk_ClangGuitar_outGain", 3
+
+gk_ClangGuitar_level init 0
+gk_ClangGuitar_shape init .95
+gk_ClangGuitar_scale init .25
+gk_ClangGuitar_pluck_position init .95
+gk_ClangGuitar_gain init .75
+gk_ClangGuitar_outGain init .5
+gk_FaustModularbody_midi_dynamic_range init 20
+
 instr ClangGuitar
-
-//////////////////////////////////////////////
-//  Instrument definition patch ClangGuitar.
-//  Author: Michael Gogins
-//////////////////////////////////////////////
-k_ClangGuitar_level init 12
-k_ClangGuitar_midi_dynamic_range init 60
-k_ClangGuitar_bend init 0
-k_ClangGuitar_gain init .5
-k_ClangGuitar_sustain init 1
-k_ClangGuitar_shape init .57
-k_ClangGuitar_scale init .517
-k_ClangGuitar_tapBody init 0
-k_ClangGuitar_pluckPosition init .09
-k_ClangGuitar_outGain init 1
-
-i_instrument = p1
-i_time = p2
-i_sustain = p3
-i_midi_key = p4
-i_midi_dynamic_range = i(k_ClangGuitar_midi_dynamic_range)
-i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.6 - i_midi_dynamic_range / 2)
-k_space_front_to_back = p6
-k_space_left_to_right = p7
-k_space_bottom_to_top = p8
-i_frequency = cpsmidinn(i_midi_key)
-//  Adjust the following value until "overall amps" at the end of performance is about -6 dB.
-i_level_correction = 53.5 + 12
-i_normalization = ampdb(-i_level_correction) / 2
-i_amplitude = ampdb(i_midi_velocity) * i_normalization
-k_gain = ampdb(k_ClangGuitar_level)
 i_attack = .005
 i_sustain = p3
 i_release = .1
 xtratim i_attack + i_release
-
-ip01_freq init i_frequency
-kp02_bend init i(k_ClangGuitar_bend)
-ip03_gain init i(k_ClangGuitar_gain)
-ip04_sustain init i(k_ClangGuitar_sustain)
-ip05_shape init i(k_ClangGuitar_shape)
-ip06_scale init i(k_ClangGuitar_scale)
-ip07_tapBody init i(k_ClangGuitar_tapBody)
-kp08_pluckPosition init i(k_ClangGuitar_pluckPosition)
-ip09_outGain init i(k_ClangGuitar_outGain)
-ip10_gate init 1
-
-a_left, a_right clang_invoke "guitar_factory", 3, ip01_freq, kp02_bend, ip03_gain, ip04_sustain, ip05_shape, ip06_scale, ip07_tapBody, kp08_pluckPosition, ip09_outGain, ip10_gate
+i_instrument = p1
+i_time = p2
+i_midi_key = p4
+; Reflect pitch into the usable range for this instrument.
+while i_midi_key < 30 do
+    i_midi_key = i_midi_key + 12
+od
+while i_midi_key > 77 do
+    i_midi_key = i_midi_key - 12
+od
+i_midi_dynamic_range = i(gk_FaustModularbody_midi_dynamic_range)
+i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.5 - i_midi_dynamic_range / 2)
+k_space_front_to_back = p6
+k_space_left_to_right = p7
+k_space_bottom_to_top = p8
+i_phase = p9
+i_frequency = cpsmidinn(i_midi_key)
+; Adjust the following value until "overall amps" at the end of performance is about -6 dB.
+i_level_correction = 46
+i_normalization = ampdb(-i_level_correction) / 2
+i_amplitude = ampdb(i_midi_velocity) * i_normalization
+k_gain = ampdb(gk_ClangGuitar_level)
+a_left, a_right clang_invoke "guitar_factory", 3, i_frequency, 0, gk_ClangGuitar_gain, 0, gk_ClangGuitar_shape, gk_ClangGuitar_scale, 0, gk_ClangGuitar_pluck_position, gk_ClangGuitar_outGain, 1
 a_signal = a_left + a_right
 a_declicking linsegr 0, i_attack, 1, i_sustain, 1, i_release, 0
 a_signal = a_signal * i_amplitude * a_declicking * k_gain
 
+#ifdef USE_SPATIALIZATION
+a_spatial_reverb_send init 0
+a_bsignal[] init 16
+a_bsignal, a_spatial_reverb_send Spatialize a_signal, k_space_front_to_back, k_space_left_to_right, k_space_bottom_to_top
+outletv "outbformat", a_bsignal
+outleta "out", a_spatial_reverb_send
+#else
 a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
-prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
+#endif
+prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
 instr MasterOutput
