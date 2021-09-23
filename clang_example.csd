@@ -16,8 +16,8 @@ nchnls = 2
 
 #include "FMWaterBell.inc"
 
-;connect "FMWaterBell",       "outleft",  "MasterOutput",        "inleft"
-;connect "FMWaterBell",       "outright", "MasterOutput",        "inright"
+connect "FMWaterBell",       "outleft",  "MasterOutput",        "inleft"
+connect "FMWaterBell",       "outright", "MasterOutput",        "inright"
 connect "ClangGuitar",       "outleft",  "MasterOutput",        "inleft"
 connect "ClangGuitar",       "outright", "MasterOutput",        "inright"
 
@@ -1421,7 +1421,7 @@ public:
     int kontrol(CSOUND *csound, MYFLT **outputs, MYFLT **inputs) override {
         //csound->Message(csound, "InvokableGuitar::kontrol.\\n");
         int result = OK;
-        //AVOIDDENORMALS;
+        AVOIDDENORMALS;
         // modularInterpInstrMIDI aa JJJJJJJJJJ
         auto aout = outputs;
         auto ain = inputs;
@@ -1460,7 +1460,7 @@ instr ClangGuitar
 //  Instrument definition patch ClangGuitar.
 //  Author: Michael Gogins
 //////////////////////////////////////////////
-k_ClangGuitar_level init 0
+k_ClangGuitar_level init 12
 k_ClangGuitar_midi_dynamic_range init 60
 k_ClangGuitar_bend init 0
 k_ClangGuitar_gain init .5
