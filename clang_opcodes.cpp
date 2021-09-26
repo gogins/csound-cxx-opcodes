@@ -65,9 +65,13 @@ using namespace clang;
 using namespace clang::driver;
 
 /**
- * Diagnostics are global for all these opcodes.
+ * Diagnostics are global for all these opcodes, and also for 
+ * all modules compiled by these opcodes.
  */
-static bool diagnostics_enabled;
+PUBLIC bool &clang_diagnostics_enabled() {
+    static bool enabled = false;
+    return enabled;
+}
 
 llvm::ExitOnError exit_on_error;
 
@@ -116,12 +120,12 @@ private:
     {
         llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
         main_jit_dylib.addGenerator(std::move(process_symbols_generator));
-        if (diagnostics_enabled) std::fprintf(stderr, "####### clang_compile: main_jit_dylib: name: %s\n", main_jit_dylib.getName().c_str());
+        if (clang_diagnostics_enabled()) std::fprintf(stderr, "####### clang_compile: main_jit_dylib: name: %s\n", main_jit_dylib.getName().c_str());
     }
 public:
     ~JITCompiler()
     {
-        if (diagnostics_enabled) std::fprintf(stderr, "####### clang_compile: deleting JITCompiler %p and ending execution session.\n", this);
+        if (clang_diagnostics_enabled()) std::fprintf(stderr, "####### clang_compile: deleting JITCompiler %p and ending execution session.\n", this);
         if(auto error = execution_session.endSession()) {
             execution_session.reportError(std::move(error));
         }
@@ -238,7 +242,7 @@ public:
      */
     int init(CSOUND *csound)
     {
-    	diagnostics_enabled = false;
+    	clang_diagnostics_enabled() = false;
         // Parse the compiler options.
         auto compiler_options = csound->strarg2name(csound, (char *)0, S_compiler_options->data, (char *)"", 1);
         std::vector<const char*> args;
@@ -246,13 +250,13 @@ public:
         tokenize(compiler_options, ' ', tokens);
         for (int i = 0; i < tokens.size(); ++i) {
             if (tokens[i] == "-v") {
-                diagnostics_enabled = true;
+                clang_diagnostics_enabled() = true;
             }
             args.push_back(tokens[i].c_str());
         }
         //std::fprintf(stderr, "ClangCompile::init: line %d\n", __LINE__);
         auto entry_point = csound->strarg2name(csound, (char *)0, S_entry_point->data, (char *)"", 1);
-        if (diagnostics_enabled) csound->Message(csound, "####### clang_compile: entry_point: %s\n", entry_point);
+        if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_compile: entry_point: %s\n", entry_point);
         // Create a temporary file containing the source code.
         auto source_code = csound->strarg2name(csound, (char *)0, S_source_code->data, (char *)"", 1);
         const char *temp_directory = std::getenv("TMPDIR");
@@ -272,14 +276,14 @@ public:
         // the process; C++ doesn't allow taking the address of ::main.
         void *main_address = (void*)(intptr_t) GetExecutablePath;
         std::string executable_filepath = GetExecutablePath(args[0], main_address);
-        if (diagnostics_enabled) csound->Message(csound, "####### clang_compile: executable_filepath: %s\n", executable_filepath.c_str());
+        if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_compile: executable_filepath: %s\n", executable_filepath.c_str());
         IntrusiveRefCntPtr<DiagnosticOptions> diagnostic_options = new DiagnosticOptions();
         TextDiagnosticPrinter *diagnostic_client = new TextDiagnosticPrinter(llvm::errs(), &*diagnostic_options);
         IntrusiveRefCntPtr<DiagnosticIDs> diagnostic_ids(new DiagnosticIDs());
         DiagnosticsEngine diagnostics_engine(diagnostic_ids, &*diagnostic_options, diagnostic_client);
         // Infer Csound's runtime architecture.
         const std::string process_triple = llvm::sys::getProcessTriple();
-        if (diagnostics_enabled) csound->Message(csound, "####### clang_compile: triple: %s\n", process_triple.c_str());
+        if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_compile: triple: %s\n", process_triple.c_str());
         llvm::Triple triple(process_triple);
         // Use ELF on Windows-32 and MingW for now.
 #ifndef CLANG_INTERPRETER_COFF_FORMAT
@@ -297,7 +301,7 @@ public:
         ///SmallVector<const char *, 16> args(argv, argv + argc);
         args.push_back("-fsyntax-only");
         for (auto arg : args) {
-            if (diagnostics_enabled) csound->Message(csound, "arg: %s\n", arg);
+            if (clang_diagnostics_enabled()) csound->Message(csound, "arg: %s\n", arg);
         }
         // TODO: Change this to in-memory?
         std::unique_ptr<Compilation> compilation(clang_driver.BuildCompilation(args));
@@ -369,9 +373,9 @@ public:
             // It seems the actual compilation to machine language happens
             // just when a symbol is accessed for the first time.
             auto csound_main = (int (*)(CSOUND *)) exit_on_error(jit_compiler->getSymbolAddress(entry_point));
-            if (diagnostics_enabled) csound->Message(csound, "####### clang_compile: invoking \"%s\" at %p:\n", entry_point, csound_main);
+            if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_compile: invoking \"%s\" at %p:\n", entry_point, csound_main);
             result = csound_main(csound);
-            if (diagnostics_enabled) csound->Message(csound, "####### clang_compile: \"%s\" returned: %d\n", entry_point, result);
+            if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_compile: \"%s\" returned: %d\n", entry_point, result);
             //~ // On success, store the compiled module until Csound exits.
             //~ std::shared_ptr<llvm::Module> object_module = std::move(module);
             //~ if (object_module) {
@@ -390,7 +394,7 @@ public:
  * implements a `ClangInvokable`, creates an instance of that
  * `ClangInvokable` and invokes it.
  */
-class ClangInvoke : public csound::OpcodeBase<ClangInvoke>
+class ClangInvoke : public csound::OpcodeNoteoffBase<ClangInvoke>
 {
 public:
     // OUTPUTS
@@ -414,19 +418,19 @@ public:
         int result = OK;
         // Look up factory.
         auto invokable_factory_name = csound->strarg2name(csound, (char *)0, S_invokable_factory->data, (char *)"", 1);
-        if (diagnostics_enabled) csound->Message(csound, "####### clang_invoke::init: factory name: \"%s\"\n", invokable_factory_name);
+        if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_invoke::init: factory name: \"%s\"\n", invokable_factory_name);
         // Create instance.
 	    auto invokable_factory = (ClangInvokable *(*)()) exit_on_error(jit_compiler->getSymbolAddress(invokable_factory_name));
-        if (diagnostics_enabled) csound->Message(csound, "####### clang_invoke::init: factory function: %p\n", invokable_factory);
+        if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_invoke::init: factory function: %p\n", invokable_factory);
         auto instance = invokable_factory();
-      	if (diagnostics_enabled) csound->Message(csound, "####### clang_invoke::init: instance: %p thread: %d\n", instance, thread);
+      	if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_invoke::init: instance: %p thread: %d\n", instance, thread);
 	    clang_invokable.reset(instance);
         if (thread == 2) {
             return result;
         }
         // Invoke the instance.
         result = clang_invokable->init(csound, &opds, outputs, inputs);
-        if (diagnostics_enabled) csound->Message(csound, "####### clang_invoke::init: invokable::init: result: %d\n", result);
+        if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_invoke::init: invokable::init: result: %d\n", result);
         return result;
     }
     int kontrol(CSOUND *csound)
@@ -439,13 +443,14 @@ public:
         return result;
 
     }
-    //~ int noteoff(CSOUND *csound) {
-        //~ int result = OK;
-        //~ result = clang_invokable->noteoff(csound);
-        //~ clang_invokable.reset();
-        //~ if (diagnostics_enabled) csound->Message(csound, "####### clang_invoke::noteoff: invokable::noteoff: result: %d\n", result);
-    	//~ return result;
-    //~ }
+    int noteoff(CSOUND *csound) {
+        if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_invoke::noteoff\n");
+        int result = OK;
+        result = clang_invokable->noteoff(csound);
+        clang_invokable.reset();
+        if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_invoke::noteoff: invokable::noteoff: result: %d\n", result);
+    	return result;
+    }
 };
 
 extern "C" {
@@ -478,6 +483,10 @@ extern "C" {
     PUBLIC int csoundModuleDestroy_clang_opcodes(CSOUND *csound)
     {
         //~clang_compilers_for_csounds().del(csound);
+        jit_compiler.reset();
+        if (clang_diagnostics_enabled()) {
+            std::fprintf(stderr, "####### csoundModuleDestroy: released jit_compiler: now %p\n", jit_compiler.get());
+        }
         llvm::llvm_shutdown();
         return 0;
     }

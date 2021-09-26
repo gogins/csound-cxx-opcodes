@@ -19,6 +19,10 @@ and is based on the
 The `clang_invoke` opcode was inspired by the 
 [`faustgen`](https://csound.com/docs/manual/faustgen.html) opcodes.
 
+At this time, only one LLVM context and ORC compiler may exist in a single 
+Csound process. The results of running two Csound performances from a single 
+process, where both use the Clang opcodes, are undefined.
+
 # clang_compile
 
 `clang_compile` - Compiles C/C++ source code into a module, and executes it at
@@ -220,7 +224,7 @@ called once per kperiod during the lifetime of the opcode. Any output values
 computed by the ClangInvokable are returned in the outputs argument.
 
 When the Csound instrument that has created the `clang_invoke` opcode is 
-turned off, Csound calls the `ClangInvokable::oteoff` method. At that 
+turned off, Csound calls the `ClangInvokable::noteoff` method. At that 
 time, the ClangInvokable should release any system resources or memory 
 that it has acquired.
 
@@ -230,19 +234,20 @@ The ClangInvokable instance is then deleted by the `clang_invoke` opcode.
 
 The `clang_example.csd` file uses the `clang_compile` opcode to 
 compile a guitar opcode and instrument, a reverb opcode and instrument, 
-and a score generating instrument. For the sake of clarity, although all of 
-this code could be implemented in one module, the following separate modules 
-are defined:
+and a score generator. For the sake of clarity, although all of this code 
+could be implemented in one module, the following separate modules are 
+defined:
 
 1. A physically modelled guitar opcode, written in C++, which is then 
    wrapped in a Csound instrument definition.
+   
 2. A reverb opcode, written in C++, which is then wrapped in a Csound instrument 
    definition.
+   
 3. A score generating function, written in C++.
    
 The Csound orchestra in this piece uses the signal flow graph opcodes to connect 
-the guitar instrument to the reverb instrument, and to connect the reverb 
-instrument to an output instrument.
+the guitar instrument to the outpur instrument, where reverb is applied.
 
 # Installation
 

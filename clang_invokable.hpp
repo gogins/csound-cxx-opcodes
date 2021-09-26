@@ -39,7 +39,8 @@ struct ClangInvokable {
  */
 class ClangInvokableBase : public ClangInvokable {
     public:
-        virtual ~ClangInvokableBase() {};
+        virtual ~ClangInvokableBase() {
+        };
         int init(CSOUND *csound_, OPDS *opds_, MYFLT **outputs, MYFLT **inputs) override {
             int result = OK;
             csound = csound_;
