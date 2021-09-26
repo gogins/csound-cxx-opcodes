@@ -152,8 +152,8 @@ module.
 ## Initialization
 
 *S_clang_invokable* - A name unique in the Csound process for a factory function 
-`ClangInvokable *(*)` that cerates and returns a new object that implements the 
-following pure abstrat interface:
+`ClangInvokable *(*)` that creates and returns a new object that implements the 
+following pure abstract interface:
 ```
 struct ClangInvokable {
 	virtual ~ClangInvokable() = 0;
