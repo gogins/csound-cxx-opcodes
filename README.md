@@ -192,8 +192,8 @@ ClangInvokable *create_score_generator();
 -  1 = The `ClangInvokable::init` method is called, but not the 
    `ClangInvokable::kontrol` method.
 -  2 = The `ClangInvokable::kontrol` method is called once for every 
-   kperiod during the lifetime of the instrument, but not the 
-   `ClangInvokable::init` function.
+   kperiod during the lifetime of the instrument, but the 
+   `ClangInvokable::init` function is not called.
 -  3 = The `ClangInvokable::init` method is called once at the 
    init pass for the instrument, and the `ClangInvokable::kontrol` 
    method is called once every kperiod during the lifetime of the 
@@ -213,9 +213,9 @@ is created. `clang_invoke` then calls the `ClangInvokable::init` method with the
 input and output parameters, and any output values computed by the ClangInvokable 
 are returned in the outputs argument.
 
-The user must of course ensure that the ClangInvokable has the right numbers, 
-types, and rates for these parameters and return values. Because of the variable 
-numbers and types of arguments, type checking is virtually impossible.
+Because of the variable numbers and types of arguments, type checking is 
+virtually impossible.The user must of course ensure that the ClangInvokable has 
+the right numbers, types, and rates for these parameters and return values. 
 
 ## Performance
 
