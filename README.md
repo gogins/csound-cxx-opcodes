@@ -1,10 +1,10 @@
 # Clang Opcodes
 
-The Clang opcodes embed the Clang/LLVM just-in-time C/C++ compiler into Csound. 
-This enables a Csound orchestra to include C/C++ source code, compile and link 
-it, and call it during the Csound performance.
+The Clang opcodes embed the Clang/LLVM just-in-time C++ compiler into Csound. 
+This enables a Csound orchestra to include, compile, and run C++ code as part 
+of the Csound performance.
 
-The `clang_compile` opcode compiles C or C++ source, embedded in a Csound 
+The `clang_compile` opcode compiles C++ source, embedded in a Csound 
 orchestra, into an executable module, and executes it at init time.
 
 The `clang_invoke` opcode enables a compiled module to be invoked from Csound 
@@ -25,17 +25,18 @@ process, where both use the Clang opcodes, are undefined.
 
 # clang_compile
 
-`clang_compile` - Compiles C/C++ source code into a module, and executes it at
+`clang_compile` - Compiles C++ source code into a module, and executes it at
 Csound init time. 
 
 ## Description
 
 The `clang_compile` opcode is an on-request-compiler (ORC) that enables 
-Csound to compile C or C++ source code, embedded in the Csound orchestra, to 
-a module of LLVM IR code; load and link that module; and call the Csound API, 
+Csound to compile C++ source code, embedded in the Csound orchestra, to 
+a module of low-level virtual machine (LLVM) intermediate representation (IR) 
+code; load and link that module; and call the Csound API, 
 other modules, or dynamic link libraries from that module. The ORC compiler is 
 a type of just-in-time (JIT) compiler, in which the actual translation to 
-machine language takes place whenever a symbol in the module is accessed for 
+machine language takes place automatically whenever a symbol in the module is accessed for 
 the first time from the ORC compiler's LLVM execution session.
 
 ## Syntax
@@ -51,7 +52,7 @@ full access to the running instance of Csound via the Csound API members of the
 CSOUND structure, as well as to all symbols in other LLVM modules, and all 
 exported symbols in all loaded dynamic link libraries.
 
-*S_source_code* - C or C++ source code. Can be a multi-line string literal 
+*S_source_code* - C++ source code. Can be a multi-line string literal 
 enclosed in `{{` and `}}`. Please note, this string is a "heredoc" and, thus, 
 any `\` characters in it must be escaped, e.g. one must write `\\n` not '\n' 
 for a newline character. The source code represents one translation unit, but 
@@ -91,7 +92,7 @@ in this context.
 
 __**PLEASE NOTE**__: Many shared libraries use the symbol `__dso_handle`, but 
 this is not defined in the ORC compiler's startup code. To work around this, 
-manually define it in your C/C++ code like this:
+manually define it in your C++ code like this:
 ```
 void* __dso_handle = (void *)&__dso_handle;
 ```
@@ -105,29 +106,29 @@ Once the `clang_compile` opcode has compiled the module, Csound will immediately
 call the entry point function in that module. At that very time, the LLVM ORC 
 compiler will translate the IR code in the module to machine language, perform 
 relocations, resolve symbols, and otherwise load and link the module into the 
-running Csound process, just like any other C/C++ module.
+running Csound process, just like any other C++ module.
 
 The entry point function may call any Csound API functions that are members of 
 the `CSOUND` struct, define classes and structs, call any public symbol in any 
 loaded dynamic link library, or indeed do anything at all that can be done 
-with C or C++ code.
+with C++ code.
 
 For example, the module may use an external shared library to assist with 
 algorithmic composition, then translate the generated score to a Csound score, 
 then call `csound->InputMessage` to schedule the score for immediate 
 performance.
 
-However, one of the most significant uses of `clang_compile` is to compile C/C++
+However, one of the most significant uses of `clang_compile` is to compile C++
 code into classes that can perform the work of Csound opcodes. This is 
 done by implementing the `ClangInvokable` interface. See `clang_invoke` for how 
 this works and how to use it.
 
 ## Example
 
-The `clang_hello.csd` file uses the `clang_compile` opcode to demonstrate and  
+The `clang_hello.csd` file uses the `clang_compile` opcode to demonstrate and 
 test the basic funtionality of the `clang_compile` and `clang_invoke` opcodes. 
-This is a bare bones test that does just enough to prove that things work, and 
-no more.
+This is a bare bones test that does just enough to prove that things are working, 
+and no more.
 
 # clang_invoke
 
@@ -141,7 +142,7 @@ Creates an instance of a `ClangInvokable` that has been defined
 previously using `clang_compile`, and invokes that instance at i-time, k-time, 
 or both. 
 
-This can be used to define any type of Csound opcode. It can also be used for 
+This can be used to implement any type of Csound opcode. It can also be used for 
 other purposes, e.g. simply as a way to call some function in the ClangInvokable 
 module.
 
@@ -214,8 +215,8 @@ input and output parameters, and any output values computed by the ClangInvokabl
 are returned in the outputs argument.
 
 Because of the variable numbers and types of arguments, type checking is 
-virtually impossible.The user must of course ensure that the ClangInvokable has 
-the right numbers, types, and rates for these parameters and return values. 
+virtually impossible. The user must therefore take care that the ClangInvokable 
+has the right numbers, types, and rates for these parameters and return values. 
 
 ## Performance
 
