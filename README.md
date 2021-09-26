@@ -192,9 +192,9 @@ ClangInvokable *create_score_generator();
 
 -  1 = The `ClangInvokable::init` method is called, but not the 
    `ClangInvokable::kontrol` method.
--  2 = The `ClangInvokable::kontrol` method is called once for every 
-   kperiod during the lifetime of the instrument, but the 
-   `ClangInvokable::init` function is not called.
+-  2 = The `ClangInvokable::init` function is not called, but the
+   `ClangInvokable::kontrol` method is called once for every 
+   kperiod during the lifetime of the instrument.
 -  3 = The `ClangInvokable::init` method is called once at the 
    init pass for the instrument, and the `ClangInvokable::kontrol` 
    method is called once every kperiod during the lifetime of the 
@@ -214,15 +214,15 @@ is created. `clang_invoke` then calls the `ClangInvokable::init` method with the
 input and output parameters, and any output values computed by the ClangInvokable 
 are returned in the outputs argument.
 
-Because of the variable numbers and types of arguments, type checking is 
-virtually impossible. The user must therefore take care that the ClangInvokable 
-has the right numbers, types, and rates for these parameters and return values. 
+Because of the variable numbers and types of arguments, it is virtually impossible 
+for `clang_invoke` to perform type checking. The user must therefore take care 
+to defie the correct numbers, types, and rates for these parameters and return values. 
 
 ## Performance
 
 If the `thread` parameter is 2 or 3, the `ClangInvokable::kontrol` method is 
 called once per kperiod during the lifetime of the opcode. Any output values 
-computed by the ClangInvokable are returned in the outputs argument.
+computed by the ClangInvokable must be returned in the *outputs* argument.
 
 When the Csound instrument that has created the `clang_invoke` opcode is 
 turned off, Csound calls the `ClangInvokable::noteoff` method. At that 
