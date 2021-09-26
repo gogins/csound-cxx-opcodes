@@ -247,7 +247,7 @@ defined:
 3. A score generating function, written in C++.
    
 The Csound orchestra in this piece uses the signal flow graph opcodes to connect 
-the guitar instrument to the outpur instrument, where reverb is applied.
+the guitar instrument to the output instrument, where reverb is applied.
 
 # Installation
 
