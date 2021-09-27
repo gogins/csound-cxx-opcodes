@@ -1,11 +1,15 @@
- %
+%
 %-----------------------------------------------------------
 %% Computer Music Journal LaTeX template
 %%
 %% September  2009
 %% Author: Cornelia Kreutzer, University of Limerick
 
-
+% Maximum of 32 pages in the PDF including figures and references.
+% Present first abstractly, then illustrate concretely, then 
+% discuss examples. 
+% Include figures for Clang/LLVM, for ORC, and for the Csound 
+% opcodes.
 
 %---Document preamble
 %
@@ -56,7 +60,7 @@
 %---Document----------
 \begin{document}
 
-{\cmjTitle Embedding Clang/LLVM in Csound}
+{\cmjTitle Embedding a Runtime C++ Compiler in a Software Synthesis System}
 \vspace*{24pt}
 
 (In the initial submission, omit all the following author information to ensure anonymity during peer review.
@@ -78,43 +82,81 @@ Post will be sent to that address.)
 
 
 \begin{abstract}
-I present new opcodes for the Csound computer music system that embed 
-the Clang/LLVM on-request compiler (ORC). C or C++ source code may be 
-embedded in a regular Csound orchestra file, compiled by the \texttt{clang\_compile} opcode, and invoked during performance by the 
-\texttt{clang\_invoke} opcode. Uses include prototyping DSP code in C/C++, 
-writing new opcodes, algorithmic composition, using external dynamic link libraries, 
-creating native user interfaces for Csound 
-orchestras, and more. The technology and patterns implemented 
-here could be adapted for use in other computer music systems that are 
-written in C or C++. 
+	This article considers why musicians and researchers might want to use a C++ compiler embedded in a software synthesis system (SWSS), and how such a compiler can be implemented and used, by presenting new opcodes for the Csound SWSS that embed the Clang/LLVM on-request compiler (ORC). C++ source code may be embedded in a regular Csound orchestra file, compiled by the \texttt{Clang\_compile} opcode, and invoked during performance by the \texttt{Clang\_invoke} opcode. Uses include writing new signal processing and synthesis code in C++ right in the SWSS, full-strength algorithmic composition right in the SWSS, calling into external dynamic link libraries right from the SWSS, creating native user interfaces for a piece right in the SWSS, and more. The technology and patterns presented here could be adapted for use in any SWSS that supports the C calling convention. 
 \end{abstract}
 
 \section{<<BEGIN ARTICLE>>}
-Introductory body text comes here. 
-Just replace the text of the template with the text for your article.
-Introductory text does not normally have a printed section heading, the default heading "begin article" in double angle brackets is an instruction for the typesetter and should be left as it stands.
-Exception: only if the introductory remarks contain subsections (with level-B headings), then the entire introductory section gets a level-A heading, typically ``Introduction'' or perhaps something more exciting.
+% Why do it?
+Let us begin with the question, \textit{Why do this?} Basically, to provide more computer power while, at the same time, speeding up the musician's workflow. In computer music, and in particular in algorithmic composition, there is generally a work cycle that goes something like this:
 
-Starting each sentence on a new line in the LaTeX source can be helpful for the editors in preparing an article for submission to MIT Press.
+\begin{enumerate}
+\item \textit{Coding time}: write or edit some source code.
+\item \textit{Building time}: compile the source code.
+\item \textit{Debugging time}: if the code doesn't run, debug it, then go back to 1.
+\item \textit{Composition time}: Use the software to actually write some music.
+\item \textit{Rendering time}: Use the software to actually perform the music.
+\item \textit{Audition time}: Critically listen to the music. If you are not satisfied, go back to step 1, 2, 3, 4, or 5.
+\end{enumerate}
 
-Use of additional packages, beyond what are included in this template and the cmjStyle.sty (and cmjStyle-pdftex.sty) documents should not be necessary and is discouraged. 
+\noindent At the birth of computer music, each of these steps was agonizingly slow. As computers have increased in memory and speed, the steps have certainly gotten faster and faster. Today, for most pieces, it is possible to render a piece to real-time audio, and thus to collapse steps 5 and 6 above:
 
-For style questions not answered here, visit http://mitpress.mit.edu/cmj to see the submission guidelines and previously published articles.  
-Most issues include a freely downloadable feature article.  
-Questions may be directed to cmj-editor@mit.edu; please put [CMJ MS] in the subject line.
+\begin{enumerate}
+\item \textit{Coding time}: write or edit some source code.
+\item \textit{Building time}: compile the source code.
+\item \textit{Debugging time}: if the code doesn't build or run, debug it, then go back to 1.
+\item \textit{Composition time}: Use the software to actually write some music.
+\item \textit{Audition time}: Use the software to actually render the music to real-time audio, and listen to it critically. If you are not satisfied, go back to steps 1, 2, 3, or 4.
+\end{enumerate}
+	Today also, a new paradigm for coding and composing is emerging. This involves the use of a SWSS that is also a development system. Sometimes this can mean using a SWSS that is designed as an all-in-one integrated development system, such as SuperCollider \citep{supercollider}. Sometimes this can mean using the SWSS from a dynamic language, as when Csound \citep{csoundmain, csoundbook} is used from Python \citep{python} and the piece also is composed in Python using a library such as musx \citep{musx} or CsoundAC \citep{csoundextended}.
 
-\parskip 18pt
+	And sometimes, and this is perhaps more interesting, it can mean embedding a development system in the SWSS, as when the Faust language \citep{faustdsp} is embedded in Csound using the faustgen opcodes \cite{faustgen}. This is what we present here: new Clang opcodes for Csound \citep{clangpcodes}. The user writes C++ code right in the Csound orchestra, the Clang opcodes automatically compile that source code at performance time, and the compiled code runs as part of the Csound performance... at the speed of native C++.
 
-%------------------------------------------------
-%
-% format for Heading-A style
-\section{Format for Heading-A Style}
+The effect then is to collapse steps 1, 2, 3, and 4 above, with this result:
 
-Insert body text here.  
-Use the Heading-A style for headings of major sections.
-Note that CMJ does not use section numbers for any level of heading.
+\begin{enumerate}
+\item \textit{Composition time}: write or edit some source code that generates and/or renders a piece.
+\item \textit{Audition time}: Use the software to actually render the music to real-time audio, and listen to it critically. If the piece fails to compile or play, go back to step 1 and debug it. If the piece plays but is not musically satisfactory, go back to step 1 and edit it.
+\end{enumerate}
 
-\vspace*{24pt}
+\indent In this way, it is possible to move \textit{all} of the work involved in composing \textit{and} programming computer music into the composition time and audition time parts of the work cycle.
+
+And that is as it should be.
+
+% How Clang/LLVM works
+\section{The Runtime Compiler}
+
+A \textit{runtime compiler} is a computer that translates source code into executable form during the run time of some host program without requiring the user of a build system or external programs that preprocess, compile, and link the code. For a dynamic language such as Python or, for that matter, Csound, the host program is the compiler itself. Yes, any SWSS that translates source code into sound without external assistance is a runtime compiler.
+
+Until recently, although runtime compilers for C and C++ certainly did exist, thanks to numerous issues they were not generally used. With the advent of the low-level virtual machine (LLVM) and Clang projects \citep{llvm}, that has changed. The primary motive of LLVM/Clang is to provide a modular system of dynamic link libraries that implement a drop-in replacement of the widely used GNU Compiler Collecton (GCC) \citep{gcc}. But the modular design of LLVM/Clang greatly facilities the implementation of runtime compilers for either custom languages (as with the Faust DSP system) or C++ (as with the Clang opcodes presented here).
+
+On the most basic level, the LLVM/Clang system works as follows:
+
+\begin{enumerate}
+\item \textit{Front end}: translate source code to the machine language (called intermediate representation (IR)) for an abstract, low-level virtual machine (LLVM). Each translation unit becomes a module of IR.
+\item \textit{Back end}: translate modules of IR to modules of actual exectuable machine language, link them, relocate them, and resolve all symbols. The modules become an executable program or dynamic link library.
+\end{enumerate}
+
+\noindent The beauty of the LLVM system is that a new front end can fairly easily be added to the system (because all front ends emit the same IR). For example, the Faust language \citep{faustdsp} includes its own new LLVM front end that translates Faust source code to IR. Similarly, a new back end can easily be written for any runtime architecture. The only code that needs to be written for a new runtime is the code that emits native machine language instructions for each IR instruction. In theory any front end (e.g. Clang) will work with any back end (to run on Windows, the macOS, Linux, WebAssembly, etc., etc.).
+
+\begin{figure}[]
+\begin{center}
+\includegraphics{llvm}
+\caption{Overview of LLVM Architecture.}
+\label{fig:llvm}
+\end{center}
+\end{figure}
+
+For a \textit{runtime} compiler, the back end is modified to provide for emitting, loading, relocating, and linking native machine language at run time. The LLVM/Clang system that does this is called the on-request compiler (ORC) \citep{llvmorc}. It is a type of just-in-time (JIT) compiler that emits native machine language for a symbol the very first time  the address of that symbol is requested from the LLVM execution session. The ORC compiler and LLVM can load and link external dynamic link libraries --- whether system libraries, or user libraries, or LLVM's own in-memory JITDylib libraries -- at run time, and thus perform the functions of a build system linker or an operating system's linking loader.
+
+% How the opcodes work
+
+As an example of how to embed a runtime C++ compiler into a SWSS, we present two new opcodes for Csound: \texttt{clang\_compile} and \texttt{clang\_invoke}. These opcodes are available on GitHub \cite{clangopcodes}, and are documented there. 
+
+
+
+
+
+% How to use the opcodes
 
 % format for Heading-B style
 \subsection{Format for Heading-B Style}
