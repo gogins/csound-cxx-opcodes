@@ -1656,52 +1656,127 @@ std::uniform_real_distribution<> random_pan(.05, .95);
  * 6 homogeneity
  */
  
-Eigen::VectorXd minima;
-Eigen::VectorXd maxima;
-Eigen::VectorXd ranges;
+ typedef Eigen::Matrix<double, 7, 1> Note;
+ typedef Eigen::Matrix<double, 7, 7> Transformation;
+ typedef std::vector<Note> Score;
+ 
+struct Scaling {
+    Note minima;
+    Note maxima;
+    Note ranges;
+    Note target_minima;
+    Note target_ranges;
+};
 
-void update_bounds(Eigen::VectorXd &note) {
+void update_bounds(Scaling &scaling, const Note &note) {
     for (int i = 0; i < 6; ++i) {
-        if (note[i] < minima[i]) {
-            minima[i] = note[i];
+        if (note[i] < scaling.minima[i]) {
+            scaling.minima[i] = note[i];
         }
-        if (note[i] > maxima[i]) {
-            maxima[i] = note[i];
+        if (note[i] > scaling.maxima[i]) {
+            scaling.maxima[i] = note[i];
         }
     }
-    ranges = maxima - minima;
+    scaling.ranges = scaling.maxima - scaling.minima;
 }
 
-void recurrence(const Eigen::VectorXd &note, const std::vector<Eigen::MatrixXd> &transformations, std::vector<Eigen::VectorXd> &score, int depth) {
+void multiple_copy_reducing_machine(const Note &note, const std::vector<Transformation> &transformations, Score &score, int depth) {
     --depth;
     if (depth < 0) {
         return;
     }
     for (const auto &transformation : transformations) {
-        Eigen::VectorXd new_note = transformation * note;
-        update_bounds(new_note);
+        auto new_note = transformation * note;
         score.push_back(new_note);
-        recurrence(new_note, transformations, score, depth);
+        multiple_copy_reducing_machine(new_note, transformations, score, depth);
     }
 }
 
+void rescale(Scaling &scaling, Score &score) {
+    for (const auto &note : score) {
+        update_bounds(scaling, note);
+    }
+    std::cerr << "generated minima:" << std::endl << scaling.minima << std::endl;
+    std::cerr << "generated ranges:" << std::endl << scaling.ranges << std::endl;
+    for (auto &note : score) {
+        for (int i = 0; i < 6; ++i) {
+            // Move note to origin.
+            note[i] = (note[i] - scaling.minima[i]);            
+            // Rescale to fit target range.
+            if (scaling.ranges[i]  != 0.) {
+                note[i] = note[i] * (scaling.target_ranges[i] / scaling.ranges[i]);
+            }
+            // Move back from origin to target.
+            note[i] = (note[i] + scaling.target_minima[i]);
+        }
+    }
+}
+
+std::string to_csound_score(const Score &score) {
+    std::stringstream stream_;
+    char buffer[0x500];
+    for (const auto &note : score) {
+        auto instrument = note[0];
+        auto time = note[1];
+        auto duration = note[2];
+        auto midi_key = std::round(note[3]);
+        auto midi_velocity = note[4];
+        double depth = 0;
+        auto pan = note[5];
+        std::snprintf(buffer, 0x500, "i %9.4f %9.4f %9.4f %9.4f %9.4f %9.4f %9.4f\\n", instrument, time, duration, midi_key, midi_velocity, depth, pan);
+        stream_ << buffer;
+    }
+    auto generated_score = stream_.str();
+    std::cerr << "generated_score:" << std::endl << generated_score << std::endl;
+    return generated_score;
+}
+
 extern "C" int score_generator(CSOUND *csound) {
-    int result = OK;
-
     csound->Message(csound, ">>>>>>> This is \\"score_generator\\".\\n");
-
-    Eigen::VectorXd note(7);
+    int result = OK;
+    // Notes are column vectors. Notes and transformations are homogeneous.
+    Note note;
     note << 1., 1., 1., 60., 60., .5, 1.;
     std::cerr << "initial note: " << std::endl << note << std::endl;
-    std::vector<Eigen::MatrixXd> transformations;
-    transformations.push_back(Eigen::MatrixXd::Identity(7, 7));
-    transformations.push_back(Eigen::MatrixXd::Identity(7, 7));
-    transformations.push_back(Eigen::MatrixXd::Identity(7, 7));
-    transformations.push_back(Eigen::MatrixXd::Identity(7, 7));
-    std::vector<Eigen::VectorXd> score;
-    recurrence(note, transformations, score, 5);
-    std::stringstream stream;
-    csound->InputMessage(csound, stream.str().c_str());
+    std::vector<Transformation> transformations;
+    transformations.resize(4);
+    //                     i   t   d   k   v   p   T
+    transformations[0] << .5,  0,  0,  0,  0,  0,  0,
+                           0, .5,  0,  0,  0,  0,  0,
+                           0,  0, .5,  0,  0,  0,  0,
+                           0,  0,  0, .5,  0,  0,  0,
+                           0,  0,  0,  0, .5,  0,  0,
+                           0,  0,  0,  0,  0, .5,  0,
+                           0,  0,  0,  0,  0,  0,  1;
+    transformations[1] << .5,  0,  0,  0,  0,  0,  0,
+                           0, .5,  0,  0,  0,  0,  1,
+                           0,  0, .5,  0,  0,  0,  0,
+                           0,  0,  0, .5,  0,  0,  0,
+                           0,  0,  0,  0, .5,  0,  0,
+                           0,  0,  0,  0,  0, .5,  0,
+                           0,  0,  0,  0,  0,  0,  1;
+    transformations[2] << .5,  0,  0,  0,  0,  0,  0,
+                           0, .5,  0,  0,  0,  0,  0,
+                           0,  0, .5,  0,  0,  0,  0,
+                           0,  0,  0, .5,  0,  0,  1,
+                           0,  0,  0,  0, .5,  0,  0,
+                           0,  0,  0,  0,  0, .5,  0,
+                           0,  0,  0,  0,  0,  0,  1;
+    transformations[3] << .5,  0,  0,  0,  0,  0,  0,
+                           0, .5,  0,  0,  0,  0,  1,
+                           0,  0, .5,  0,  0,  0,  0,
+                           0,  0,  0, .5,  0,  0,  1,
+                           0,  0,  0,  0, .5,  0,  0,
+                           0,  0,  0,  0,  0, .5,  0,
+                           0,  0,  0,  0,  0,  0,  1;
+    Score score;
+    Scaling scaling;
+    scaling.target_minima << 1,       0, .2,  3,  60, .1, 1;
+    scaling.target_ranges << 2.999, 240., 2., 60, 20, .9, 1;
+    multiple_copy_reducing_machine(note, transformations, score, 3);
+    rescale(scaling, score);
+    auto csound_score = to_csound_score(score);
+    csound->InputMessage(csound, csound_score.c_str());
     return result;
 }
 
@@ -1711,7 +1786,7 @@ i_result clang_compile "score_generator", S_score_generator_code, "-v -g -O2 -st
 
 </CsInstruments>
 <CsScore>
-f 0 30
+f 0 240
 i 1 1 3 72 70 0 .5
 i 1 2 2 76 70 0 .5
 </CsScore>

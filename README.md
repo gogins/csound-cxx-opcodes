@@ -36,8 +36,8 @@ a module of low-level virtual machine (LLVM) intermediate representation (IR)
 code; load and link that module; and call the Csound API, 
 other modules, or dynamic link libraries from that module. The ORC compiler is 
 a type of just-in-time (JIT) compiler, in which the actual translation to 
-machine language takes place automatically whenever a symbol in the module is accessed for 
-the first time from the ORC compiler's LLVM execution session.
+machine language takes place automatically whenever a symbol in the module is 
+accessed for the first time from the ORC compiler's LLVM execution session.
 
 ## Syntax
 ```
@@ -96,9 +96,9 @@ manually define it in your C++ code like this:
 ```
 void* __dso_handle = (void *)&__dso_handle;
 ```
-The module _must_ define a uniquely named C function, which is the entry point to 
-the module, in the same way that the `main` function is the entry point to a C 
-program, with the following signature:
+The module _must_ define a uniquely named C function, which is the entry point 
+to the module, in the same way that the `main` function is the entry point to 
+a C program, with the following signature:
 ```
 extern "C" int(*)(CSOUND *csound);
 ```
@@ -127,14 +127,14 @@ this works and how to use it.
 
 The `clang_hello.csd` file uses the `clang_compile` opcode to demonstrate and 
 test the basic funtionality of the `clang_compile` and `clang_invoke` opcodes. 
-This is a bare bones test that does just enough to prove that things are working, 
-and no more.
+This is a bare bones test that does just enough to prove that things are 
+working, and no more.
 
 # clang_invoke
 
-`clang_invoke` - creates an instance of a class that implements the `ClangInvokable` 
-interface that has been defined previously using `clang_compile`, and invokes 
-that instance at i-time, k-time, or both.
+`clang_invoke` - creates an instance of a class that implements the 
+`ClangInvokable` interface that has been defined previously using 
+`clang_compile`, and invokes that instance at i-time, k-time, or both.
 
 ## Description
 
@@ -142,9 +142,9 @@ Creates an instance of a `ClangInvokable` that has been defined
 previously using `clang_compile`, and invokes that instance at i-time, k-time, 
 or both. 
 
-This can be used to implement any type of Csound opcode. It can also be used for 
-other purposes, e.g. simply as a way to call some function in the ClangInvokable 
-module.
+This can be used to implement any type of Csound opcode. It can also be used 
+for other purposes, e.g. simply as a way to call some function in the 
+`ClangInvokable` module.
 
 ## Syntax
 ```
@@ -152,29 +152,32 @@ module.
 ```
 ## Initialization
 
-*S_clang_invokable* - A name unique in the Csound process for a factory function 
-`ClangInvokable *(*)` that creates and returns a new object that implements the 
-following pure abstract interface:
+*S_clang_invokable* - A name unique in the Csound process for a factory 
+function `ClangInvokable *(*)` that creates and returns a new object that 
+implements the following pure abstract interface:
 ```
+/**
+ * Defines the pure abstract interface implemented by Clang modules to be 
+ * called by Csound using the `clang_invoke` opcode.
+ */
 struct ClangInvokable {
-	virtual ~ClangInvokable() = 0;
+	virtual ~ClangInvokable() {};
 	/**
 	 * Called once at init time. The inputs are the same as the 
 	 * parameters passed to the `clang_invoke` opcode. The outputs become 
 	 * the values returned from the `clang_invoke` opcode. Performs the 
 	 * same work as `iopadr` in a standard Csound opcode definition. The 
-	 * `clang_invoke_ptr` argument can be used to store a back poiner to 
-	 * the instance of `clang_invoke` that is doing the invocations, and 
-	 * from that, to the Csound intrument definition.
+	 * `opds` argument can be used to find many things about the invoking 
+     * opcde and its enclosing instrument.
 	 */
-	virtual int init(CSOUND *csound, ClangInvoke *clang_invoke_ptr, MYFLT *outputs, const MYFLT *inputs) = 0;
+	virtual int init(CSOUND *csound, OPDS *opds, MYFLT **outputs, MYFLT **inputs) = 0;
 	/**
 	 * Called once every kperiod. The inputs are the same as the 
 	 * parameters passed to the `clang_invoke` opcode. The outputs become 
 	 * the values returned from the `clang_invoke` opcode. Performs the 
 	 * same work as `kopadr` in a standard Csound opcode definition.
 	 */
-	virtual int kontrol(CSOUND *csound, MYFLT* outputs, cost MYFLT *inputs) = 0;
+	virtual int kontrol(CSOUND *csound, MYFLT **outputs, MYFLT **inputs) = 0;
 	/**
 	 * Called by Csound when the Csound instrument that contains this 
 	 * instance of the ClangInvokable is turned off.
@@ -210,13 +213,14 @@ k-rate. These are actually the inputs that were provided by Csound to
 
 The *S_clang_invokeable* symbol is looked up in the LLVM execution session 
 of the global ORC compiler, and a new instance of the ClangInvokable class 
-is created. `clang_invoke` then calls the `ClangInvokable::init` method with the 
-input and output parameters, and any output values computed by the ClangInvokable 
-are returned in the outputs argument.
+is created. `clang_invoke` then calls the `ClangInvokable::init` method with 
+the input and output parameters, and any output values computed by the 
+`ClangInvokable` are returned in the *outputs* argument.
 
-Because of the variable numbers and types of arguments, it is virtually impossible 
-for `clang_invoke` to perform type checking. The user must therefore take care 
-to defie the correct numbers, types, and rates for these parameters and return values. 
+Because of the variable numbers and types of arguments, it is virtually 
+impossible for `clang_invoke` to perform type checking. The user must 
+therefore take care to defie the correct numbers, types, and rates for these 
+parameters and return values. 
 
 ## Performance
 
@@ -226,10 +230,10 @@ computed by the ClangInvokable must be returned in the *outputs* argument.
 
 When the Csound instrument that has created the `clang_invoke` opcode is 
 turned off, Csound calls the `ClangInvokable::noteoff` method. At that 
-time, the ClangInvokable should release any system resources or memory 
+time, the `ClangInvokable` should release any system resources or memory 
 that it has acquired.
 
-The ClangInvokable instance is then deleted by the `clang_invoke` opcode.
+The `ClangInvokable` instance is then deleted by the `clang_invoke` opcode.
 
 ## Example
 

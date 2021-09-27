@@ -4,7 +4,7 @@
 #include <cstring>
 
 /**
- * Defines the pure bstract interface implemented by Clang modules to be 
+ * Defines the pure abstract interface implemented by Clang modules to be 
  * called by Csound using the `clang_invoke` opcode.
  */
 struct ClangInvokable {
