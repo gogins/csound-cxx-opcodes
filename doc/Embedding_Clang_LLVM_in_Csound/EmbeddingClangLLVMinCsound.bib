@@ -1,23 +1,70 @@
-%% This BibTeX bibliography file was created using BibDesk.
-%% http://bibdesk.sourceforge.net/
-
-
-%% Created for Peter Castine at 2014-12-18 16:14:30 +0100 
-
-
 %% Saved with string encoding Unicode (UTF-8) 
 
-@MISC{pd,
-    author = {Miller Puckette},
-    title = {Pure Data},
-    note = {\url{http://puredata.info}}
-}
+% Lazzarini Csound book.
+% Journal article introducing Faust.
+% Max/MSP main reference.
+% LLVM main reference.
+% Add DOIs if available.
 
-@MISC{csoundmain,
+% Example from CMJ citing online publication:
+% Kondo, H. 2019. “PETG vs ABS: The Differences, Simply \
+% Explained.” Available online at 
+% all3dp.com/2/petg-vsabs-3d-printing-filaments-compared. 
+% Accessed February 2021.
+
+% Use this format for online references.
+@misc{csoundmain,
     author = {Barry Vercoe and John ffitch and others},
     title = {Csound},
-    note = {\url{http://csound.com}},
-    year = {Accessed 14 April 2021}
+    note = {Available online at: \url{http://csound.com}. Accessed April 22, 2021.},
+    year = {2021 [1985]}
+}
+
+% Peer-Reviewed Publication
+%
+% 19th International Conference on Computing in High Energy and Nuclear Physics (CHEP)
+% 21-25 May, 2012, New York, USA
+%
+@inproceedings{Cling,
+  author = {Vassilev,V. and Canal,Ph. and Naumann,A. and Moneta,L. and Russo,P.},
+  title = {{Cling} -- The New Interactive Interpreter for {ROOT} 6}},
+  journal = {Journal of Physics: Conference Series},
+  year = 2012,
+  month = {dec},
+  volume = {396},
+  number = {5},
+  pages = {052071},
+  doi = {10.1088/1742-6596/396/5/052071},
+  url = {https://iopscience.iop.org/article/10.1088/1742-6596/396/5/052071/pdf},
+  publisher = {{IOP} Publishing}
+}
+
+@book{lazzarini2016csound,
+  title={Csound: a sound and music computing system},
+  author={Lazzarini, Victor and Yi, Steven and Heintz, Joachim and Brandtsegg, {\O}yvind and McCurdy, Iain and others},
+  year={2016},
+  publisher={Springer}
+}
+
+@inproceedings{puckette1997pure,
+  title={Pure data},
+  author={Puckette, Miller S and others},
+  booktitle={ICMC},
+  year={1997}
+}
+
+@book{puckette2007theory,
+  title={The Theory and Techniques of Electronic Music},
+  author={Puckette, Miller},
+  year={2007},
+  publisher={World Scientific Publishing Company}
+}
+
+@misc{pd,
+    author = {Miller Puckette},
+    title = {Pure Data},
+    note = {Available online at: \url{http://puredata.info}. Accessed 28 September 2021},
+    year = {2021 [1997]}
 }
 
 @BOOK{csoundbook,
@@ -28,98 +75,134 @@
     year = {2000}
 }
 
-@MISC{csoundextended,
+@misc{csoundextended,
     author = {Michael Gogins},
     title = {csound-extended},
-    note = {\url{https://github.com/gogins/csound-extended}},
-    year = {Accessed 27 September 2021}
+    note = {Available online at: \url{https://github.com/gogins/csound-extended}. Accessed 28 September 2021},
+    year = {2018}
 }
 
-@MISC{clangopcodes,
-    author = {Michael Gogins},
-    title = {clang-opcodes},
-    note = {\url{https://github.com/gogins/clang-opcodes}},
-    year = {Accessed 27 September 2021}
+@misc{gcc,
+    author = {{GCC steering committee}},
+    title = {GCC, the GNU Compiler Collection},
+    note = {Available online at: \url{https://gcc.gnu.org/}. Accessed 27 September 2021},
+    year = {2021 [1987]}
 }
 
-@MISC{gcc,
-author = {GCC steering committee},
-title = {GCC, the GNU Compiler Collection},
-note = {\url{https://gcc.gnu.org/}},
-year = {Accessed 27 September 2021}
+@misc{llvmorc,
+    author = {LLVM},
+    title = {ORC Design and Implementation},
+    note = {Available online at: \url{https://www.llvm.org/docs/ORCv2.html}. Accessed 27 September 2021},
+    year = {2021}
 }
 
-@MISC{llvmorc,
-author = {llvm},
-title = {ORC Design and Implementation},
-note = {\url{https://www.llvm.org/docs/ORCv2.html}},
-year = {Accessed 27 September 2021}
+@misc{llvm,
+    author = {LLVM},
+    title = {The LLVM Compiler Infrastructure},
+    note = {Available online at \url{https://llvm.org/}. Accessed 27 September 2021},
+    year = {2021}
 }
 
-@MISC{llvm,
-author = {llvm},
-title = {The LLVM Compiler Infrastructure},
-note = {\url{https://llvm.org/}},
-year = {Accessed 27 September 2021}
+@misc{clanginterpreter,
+	author = {LLVM},
+	title = {clang-interpreter},
+	note = {Available online at: \url{https://github.com/llvm/llvm-project/tree/main/clang/examples/clang-interpreter}. Accessed 28 September 2021},
+	year = {2021 [2010]}
 }
 
-
-@MISC{python,
-    author = {Guido van Rossum},
+@misc{python,
+    author = {Guido {van Rossum}},
     publisher = {Python Software Foundation},
     title = {Python},
-    note = {\url{http://www.python.org}},
+    note = {Available online at: \url{http://www.python.org}. Accessed 27 September 2021},
     year = {Accessed 27 September 2021}
 }
 
-@MISC{supercollider,
+@misc{supercollider,
     author = {James McCartney and others},
     title = {SuperCollider},
-    note = {\url{http://supercollider.sourceforge.net}},
-    year = {2004}
+    note = {Available online at: \url{https://supercollider.github.io/}. Accessed 28 September 2021},
+    year = {[1996]}
 }
 
-@MISC{musx,
+@article{mccartney2002rethinking,
+  title={Rethinking the computer music language: SuperCollider},
+  author={McCartney, James},
+  journal={Computer Music Journal},
+  volume={26},
+  number={4},
+  pages={61--68},
+  year={2002},
+  publisher={MIT Press}
+}
+
+@misc{musx,
     author = {Rick Taube},
     title = {musx},
-    note = {\url{https://github.com/musx-admin/musx}},
-    year = {Accessed 27 September 2021}
+    note = {Available online at: \url{https://github.com/musx-admin/musx}. Accessed 27 September 2021},
+    year = {2021}
 }
 
-@MISC{faustdsp,
-    author = {The Faust Project},
+@inbook{orlarey2009faust,
+  title={FAUST: an efficient functional approach to DSP programming},
+  author={Orlarey, Yann and Fober, Dominique and Letz, St{\'e}phane},
+  publisher = {Delatour France},
+  booktitle = {New Computational Paradigms for Computer Music},
+  note = {Available online at: \url{https://hal.archives-ouvertes.fr/hal-02159014/file/faust-chapter.pdf}. Accessed 27 September 2021},
+  year={2009},
+  pages={65--96}
+}
+
+@misc{faust,
+    author = {{The Faust Project}},
     publisher = {Grame Research Lab},
     title = {Faust},
-    note = {\url{https://faust.grame.fr/}},
-    year = {Accessed 27 September 2021}
+    note = {Available online at: \url{https://faust.grame.fr/}. Accessed 27 September 2021},
+    year = {2021 [2006]}
 }
 
-@MISC{faustgen,
+@misc{faustcompile,
     author = {Victor Lazzarini},
-    title = {faustgen},
-    note = {\url{https://csound.com/docs/manual/faustgen.html}},
+    title = {faustcompile},
+    note = {Available online at: \url{https://csound.com/docs/manual/faustcompile.html}. Accessed 27 September 2021},
     year = {2013}
 }
 
-@Inbook{Lazzarini2014,
-author="Lazzarini, Victor
-and Keller, Dami{\'a}n
-and Pimenta, Marcelo
-and Timoney, Joseph",
-editor="Keller, Dami{\'a}n
-and Lazzarini, Victor
-and Pimenta, Marcelo S.",
-title="Ubiquitous Music Ecosystems: Faust Programs in Csound",
-bookTitle="Ubiquitous Music",
-year="2014",
-publisher="Springer International Publishing",
-address="Cham",
-pages="129--150",
-abstract="This chapter describes the combination of two high-level audio and music programming systems, Faust and Csound. The latter is a MUSIC N-derived language, with a large set of unit generators and a long history of development. The former is a purely functional language designed to describe audio processing algorithms that can be compiled into a variety of formats. The two systems are combined in the Faust Csound opcodes, which allow the on-the-fly programming, compilation and instantiation of Faust DSP programs in a running Csound environment. Examples are presented, and the concept of Ubiquitous Music Ecosystem is discussed.",
-isbn="978-3-319-11152-0",
-doi="10.1007/978-3-319-11152-0_7",
-url="https://doi.org/10.1007/978-3-319-11152-0_7"
+@misc{faustdsp,
+    author = {Victor Lazzarini},
+    title = {faustgen},
+    note = {Available online at: \url{https://csound.com/docs/manual/faustdsp.html}. Accessed 27 September 2021},
+    year = {2013}
 }
+
+@misc{entry1,
+    author = {Barry Vercoe and others},
+    title = {entry1.c},
+    note = {Available online at: \url{https://github.com/csound/csound/blob/develop/Engine/entry1.c}. Accessed 27 September 2021},
+    year = {[1985]}
+}
+
+@Inbook{Lazzarini2014,
+    author="Lazzarini, Victor
+    and Keller, Dami{\'a}n
+    and Pimenta, Marcelo
+    and Timoney, Joseph",
+    editor="Keller, Dami{\'a}n
+    and Lazzarini, Victor
+    and Pimenta, Marcelo S.",
+    title="Ubiquitous Music Ecosystems: Faust Programs in Csound",
+    bookTitle="Ubiquitous Music",
+    year="2014",
+    publisher="Springer International Publishing",
+    address="Cham",
+    pages="129--150",
+    abstract="This chapter describes the combination of two high-level audio and music programming systems, Faust and Csound. The latter is a MUSIC N-derived language, with a large set of unit generators and a long history of development. The former is a purely functional language designed to describe audio processing algorithms that can be compiled into a variety of formats. The two systems are combined in the Faust Csound opcodes, which allow the on-the-fly programming, compilation and instantiation of Faust DSP programs in a running Csound environment. Examples are presented, and the concept of Ubiquitous Music Ecosystem is discussed.",
+    isbn="978-3-319-11152-0",
+    doi="10.1007/978-3-319-11152-0_7",
+    url="https://doi.org/10.1007/978-3-319-11152-0_7"
+}
+
+
 
 
 

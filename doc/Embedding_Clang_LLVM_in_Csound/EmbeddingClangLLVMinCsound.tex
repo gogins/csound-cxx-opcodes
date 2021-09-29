@@ -60,7 +60,7 @@
 %---Document----------
 \begin{document}
 
-{\cmjTitle Embedding a Runtime C++ Compiler in a Software Synthesis System}
+{\cmjTitle Embedding a Runtime C++ Compiler in a Software Sound Synthesis System}
 \vspace*{24pt}
 
 (In the initial submission, omit all the following author information to ensure anonymity during peer review.
@@ -68,21 +68,22 @@ On final submission please make sure that the author address is a complete, func
 Post will be sent to that address.)
 
 % Author: name
-{\cmjAuthor Michael Gogins}	% List all authors here
+{\cmjAuthor Firstname Lastname}	% List all authors here
 							% e.g.:
 							% {\cmjAuthor Doug Keislar, Peter Castine, and Jake Rundall}
  
 % Author: address
 \begin{cmjAuthorAddress}
-	Irreducible Productions\\
-	1576 Crescent Valley Road\\
-	Bovina Center, New York 13740 USA\\		% Adapt as needed for non-US addresses
-	michael.gogins@gmail.com
+	Sound Computing Group Full Address\\
+	University of Anywhere\\
+	1234 Anywhere Street\\
+	Somecity, Somestate 012345 USA\\		% Adapt as needed for non-US addresses
+	email@email.com
 \end{cmjAuthorAddress}
 
 
 \begin{abstract}
-	This article considers why musicians and researchers might want to use a C++ compiler embedded in a software synthesis system (SWSS), and how such a compiler can be implemented and used, by presenting new opcodes for the Csound SWSS that embed the Clang/LLVM on-request compiler (ORC). C++ source code may be embedded in a regular Csound orchestra file, compiled by the \texttt{Clang\_compile} opcode, and invoked during performance by the \texttt{Clang\_invoke} opcode. Uses include writing new signal processing and synthesis code in C++ right in the SWSS, full-strength algorithmic composition right in the SWSS, calling into external dynamic link libraries right from the SWSS, creating native user interfaces for a piece right in the SWSS, and more. The technology and patterns presented here could be adapted for use in any SWSS that supports the C calling convention. 
+	This article considers why musicians and researchers might want to use a C++ compiler embedded in a software synthesis (SWSS) system, and how such a compiler can be implemented and used, by presenting new opcodes for the Csound SWSS that embed the Clang/LLVM on-request compiler (ORC). C++ source code may be embedded in a regular Csound orchestra file, compiled by the \texttt{Clang\_compile} opcode, and invoked during performance by the \texttt{Clang\_invoke} opcode. Uses include writing new signal processing and synthesis code in C++ right in the SWSS, full-strength algorithmic composition right in the SWSS, calling into external dynamic link libraries right from the SWSS, creating native user interfaces for a piece right in the SWSS, and more. The technology and patterns presented here could be adapted for use in any SWSS that supports the C calling convention. 
 \end{abstract}
 
 \section{<<BEGIN ARTICLE>>}
@@ -107,9 +108,10 @@ Let us begin with the question, \textit{Why do this?} Basically, to provide more
 \item \textit{Composition time}: Use the software to actually write some music.
 \item \textit{Audition time}: Use the software to actually render the music to real-time audio, and listen to it critically. If you are not satisfied, go back to steps 1, 2, 3, or 4.
 \end{enumerate}
-	Today also, a new paradigm for coding and composing is emerging. This involves the use of a SWSS that is also a development system. Sometimes this can mean using a SWSS that is designed as an all-in-one integrated development system, such as SuperCollider \citep{supercollider}. Sometimes this can mean using the SWSS from a dynamic language, as when Csound \citep{csoundmain, csoundbook} is used from Python \citep{python} and the piece also is composed in Python using a library such as musx \citep{musx} or CsoundAC \citep{csoundextended}.
 
-	And sometimes, and this is perhaps more interesting, it can mean embedding a development system in the SWSS, as when the Faust language \citep{faustdsp} is embedded in Csound using the faustgen opcodes \cite{faustgen}. This is what we present here: new Clang opcodes for Csound \citep{clangpcodes}. The user writes C++ code right in the Csound orchestra, the Clang opcodes automatically compile that source code at performance time, and the compiled code runs as part of the Csound performance... at the speed of native C++.
+Today also, a new paradigm for coding and composing is emerging. This involves the use of a SWSS that is also a development system. Sometimes this can mean using a SWSS that is designed as an all-in-one integrated development system, such as SuperCollider \citep{supercollider, mccartney2002rethinking}. Sometimes this can mean using the SWSS from a dynamic language, as when Csound \citep{csoundmain, lazzarini2016csound, csoundbook} is used from Python \citep{python} and the piece also is composed in Python using a library such as musx \citep{musx} or CsoundAC \citep{csoundextended}.
+
+And sometimes, and this is perhaps more interesting, it can mean embedding a development system in the SWSS, as when the Faust language \citep{faust, orlarey2009faust} is embedded in Csound using the Faust opcodes \citep{Lazzarini2014, faustcompile, faustdsp}. This is what we present here: new Clang opcodes for Csound \citep{clangpcodes}. The user writes C++ code right in the Csound orchestra, the Clang opcodes automatically compile that source code at performance time, and the compiled code runs as part of the Csound performance... at the speed of native C++.
 
 The effect then is to collapse steps 1, 2, 3, and 4 above, with this result:
 
@@ -122,152 +124,142 @@ The effect then is to collapse steps 1, 2, 3, and 4 above, with this result:
 
 And that is as it should be.
 
-% How Clang/LLVM works
 \section{The Runtime Compiler}
 
-A \textit{runtime compiler} is a computer that translates source code into executable form during the run time of some host program without requiring the user of a build system or external programs that preprocess, compile, and link the code. For a dynamic language such as Python or, for that matter, Csound, the host program is the compiler itself. Yes, any SWSS that translates source code into sound without external assistance is a runtime compiler.
+A \textit{runtime compiler} is a computer that translates source code into executable form during the run time of some host program without requiring the user of a build system or external programs that preprocess, compile, and link the code. For a dynamic language such as Python or, for that matter, Csound, the host program is the compiler itself. Yes, any SWSS that translates source code or user-defined patches into sound without external assistance is a runtime compiler.
 
-Until recently, although runtime compilers for C and C++ certainly did exist, thanks to numerous issues they were not generally used. With the advent of the low-level virtual machine (LLVM) and Clang projects \citep{llvm}, that has changed. The primary motive of LLVM/Clang is to provide a modular system of dynamic link libraries that implement a drop-in replacement of the widely used GNU Compiler Collecton (GCC) \citep{gcc}. But the modular design of LLVM/Clang greatly facilities the implementation of runtime compilers for either custom languages (as with the Faust DSP system) or C++ (as with the Clang opcodes presented here).
+Until recently, although runtime compilers and interpreters for C and C++ certainly did exist, thanks to numerous issues they were not generally used. With the advent of the low-level virtual machine (LLVM) and Clang projects \citep{llvm}, that has changed. The primary motive of Clang/LLVM is to provide a modular system of dynamic link libraries that implement a drop-in replacement for the widely used GNU Compiler Collecton (GCC) \citep{gcc}. But the modular design of LLVM/Clang greatly facilities the implementation of runtime compilers either for domain-specific languages (as with the Faust DSP system), or for general-purpose C++ (as with the Clang opcodes presented here).
 
-On the most basic level, the LLVM/Clang system works as follows:
+On the most basic level, the Clang/LLVM system works as follows:
 
 \begin{enumerate}
 \item \textit{Front end}: translate source code to the machine language (called intermediate representation (IR)) for an abstract, low-level virtual machine (LLVM). Each translation unit becomes a module of IR.
 \item \textit{Back end}: translate modules of IR to modules of actual exectuable machine language, link them, relocate them, and resolve all symbols. The modules become an executable program or dynamic link library.
 \end{enumerate}
 
-\noindent The beauty of the LLVM system is that a new front end can fairly easily be added to the system (because all front ends emit the same IR). For example, the Faust language \citep{faustdsp} includes its own new LLVM front end that translates Faust source code to IR. Similarly, a new back end can easily be written for any runtime architecture. The only code that needs to be written for a new runtime is the code that emits native machine language instructions for each IR instruction. In theory any front end (e.g. Clang) will work with any back end (to run on Windows, the macOS, Linux, WebAssembly, etc., etc.).
+\noindent The beauty of the LLVM system is that a new front end can fairly easily be added to the system (because all front ends emit the same IR). For example, the Faust language \citep{faust} includes its own new LLVM front end that translates Faust source code to IR. Similarly, a new back end can easily be written for any runtime architecture. The only code that needs to be written for a new runtime is the code that emits native machine language instructions for each IR instruction. In theory, any front end (e.g. Clang) will work with any back end (to run on Windows, the macOS, Linux, WebAssembly, etc., etc.).
 
 \begin{figure}[]
 \begin{center}
-\includegraphics{llvm}
-\caption{Overview of LLVM Architecture.}
+\includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{CLangLLVMArchitecture}\caption{Overview of LLVM Architecture.}
 \label{fig:llvm}
 \end{center}
 \end{figure}
 
-For a \textit{runtime} compiler, the back end is modified to provide for emitting, loading, relocating, and linking native machine language at run time. The LLVM/Clang system that does this is called the on-request compiler (ORC) \citep{llvmorc}. It is a type of just-in-time (JIT) compiler that emits native machine language for a symbol the very first time  the address of that symbol is requested from the LLVM execution session. The ORC compiler and LLVM can load and link external dynamic link libraries --- whether system libraries, or user libraries, or LLVM's own in-memory JITDylib libraries -- at run time, and thus perform the functions of a build system linker or an operating system's linking loader.
+For a \textit{runtime} compiler, the back end is modified to provide for emitting, loading, relocating, and linking native machine language at run time. The Clang/LLVM system that does this is called the on-request compiler (ORC) \citep{llvmorc}. It is a type of just-in-time (JIT) compiler that emits native machine language for a symbol the very first time the address of that symbol is requested from the LLVM execution session. The ORC compiler and LLVM can load and link external dynamic link libraries --- whether system libraries, or user libraries, or LLVM's own in-memory JITDylib libraries --- at run time, and thus perform the functions of a build system linker or an operating system's linking loader. 
 
-% How the opcodes work
+In Figure \ref{fig:llvm}, the components involved in the Csound opcodes are labeled in boldface italics. The components used by the standard, command-line toolchain include a linker and are connected with dotted arrows. If the opcodes are compiled for another architecture such as ARM, the ORC compiler and the LLVM context will adapt and emit the correct code for that architecture.
 
-As an example of how to embed a runtime C++ compiler into a SWSS, we present two new opcodes for Csound: \texttt{clang\_compile} and \texttt{clang\_invoke}. These opcodes are available on GitHub \cite{clangopcodes}, and are documented there. 
+As an example of how to embed a runtime C++ compiler into a SWSS, we present two new opcodes for Csound: \texttt{clang\_compile} and \texttt{clang\_invoke}. The Clang/LLVM code used in these opcodes is adapted and expanded from the "clang-interpreter" example in the LLVM Project's GitHub repository \citep{clanginterpreter}. The high-level design is similar to Csound's Faust opcodes \citep{Lazzarini2014}: one opcode to compile source code (e.g. \texttt{faustcompile} \citep{faustcompile}, \texttt{clang\_compile}), another opcode to invoke compiled code (e.g. \texttt{fuastdsp} \citep{faustdsp}, \texttt{clang\_invoke}). Figure \ref{fig:clangopcodes} shows how these opcodes relate to the Clang/LLVM components.
 
-
-
-
-
-% How to use the opcodes
-
-% format for Heading-B style
-\subsection{Format for Heading-B Style}
-
-Insert body text here.  
-Use the Heading-B style for headings of subsections.
-
-% format for Heading-C style
-\subsubsection{Format for Heading-C Style}
-
-Insert body text here.
-Use the Heading-C style for headings of sub-subsections.
-
-In the initial manuscript submission, you are encouraged to include figures (with captions) inline with the text, for ease of reading during the review process. 
-All figures will need to be grayscale (i.e.,~monochrome) and sufficiently high-resolution for print (300 dpi), at the latest by your final submission.
-Figures must be referenced in the text, either directly in the text or as a parenthetic aside, e.g.~``(see Figure~\ref{fig:myFigure}).''
-Do not reference figures with terms of relative location like ``above'' or ``below,'' however.
-When an article is typeset, figures are never embedded in the text and you do not know exactly where the image will appear in relation to your text.
-For the review process, simply place the LaTeX figure definition immediately after the first paragraph referring to the image.
-
-% include figures in text with captions for initial submission, like this:
 \begin{figure}[]
 \begin{center}
-\includegraphics{myFigure}
-	% No need for file extensions here! 
-	% This is useful at final submission, when MIT Press and LaTeX need different image formats for the same image
-	% This template is already set up to look for image files in the Figures subdirectory, so that's where to put your image files. 
-\caption{Insert Figure caption here.}
-\label{fig:myFigure}
+\includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{EmbeddedCLangLLVMArchitecture}\caption{Overview of Csound Clang Opcodes.}
+\label{fig:clangopcodes}
 \end{center}
 \end{figure}
 
-Tables must also be cited in the text, as with Table~\ref{tab:myTable}. Tables in \emph{CMJ} do not have ``captions'' as such. A table has a title, which should be concise. If absolutely necessary for understanding the table, additional information can be included in a footer, although that is not required. When typeset, tables will not have vertical rules.
+\section{The Clang Opcodes for Csound}
 
-% include tables in text with captions for initial submission, like this:
-\begin{table}[]
-\caption{Sample Table with a Title}
-\centering
-\begin{tabular}{lccr}
-  \hline
-  \textbf{Column} & \textbf{Headers} & \textbf{Might Look} & \textbf{Like This}  \\
-  \hline
-  one & 2 & 3 & IV \\
-  five & 6 & 7 & VIII \\
-  nine & 10 & 11 & XII \\
-   \hline
-\end{tabular}
-\caption*{\textnormal{{\small Although table footers are often not necessary, the source code shows how to generate one using an unnumbered caption in LaTeX.}}}
-\label{tab:myTable}
-\end{table}%
+All instances of both Clang opcodes share one global instance of the ORC compiler, that is, the back end of the Clang/LLVM system. However, the \verb|clang_compile| opcode sets up the front end of the Clang/LLVM system anew for each module.
 
+\subsection{clang\_compile}
 
-For the final version after the manuscript has been accepted, however, all figures and tables should be moved to the end.
-The recommended way to achieve this is by enabling the package {\tt endfloat} as noted in the comments at the of top the LaTeX template file.
-
-Also note that for the final version of your article, MIT Press requires grayscale versions of your artwork in either EPS (vector image) or TIFF (raster) formats.
-In general, LaTeX only supports PDF, PNG, and JPEG formats for images.
-The upshot of this is that authors using LaTeX need to submit images in two formats.
-The good news is that most LaTeX implementations provide utilities for converting from the formats used by MIT Press to those used by LaTex.
-
-% equations
-You can insert equations inline with the text like this:
-
-\begin{equation}
-	\label{radupdate}
-		\Psi_{N}^{n+1} = m_{N}^{(-)}\Psi_{N-1}^{n}+m_{N}^{(0)}\Psi_{N}^{n} + q_{N}\Psi_{N}^{n-1}
-\end{equation}
-where
-\begin{eqnarray*}
-	m_{N}^{(-)} &=& \frac{\lambda^2}{2\tau}\left(S_{N+1}+2S_{N}+S_{N-1}\right)\\
-	m_{N}^{(0)} &=& \frac{1}{\tau}\left(2-\frac{\lambda^2}{2}\left(S_{N+1}+2S_{N}+S_{N-1}\right)\right)\\
-	q_{N} &=& \frac{1}{\tau}\left(\frac{\gamma^2 k^2}{2h}\left(S_{N+1}+S_{N}\right)\left(\frac{\alpha_{1}}{k}-	\alpha_{2}\right)-1\right)
-\end{eqnarray*}
-and where 
-\begin{equation*}
-	\tau = \frac{\gamma^2 k^2}{2h}\left(S_{N+1}+S_{N}\right)\left(\frac{\alpha_{1}}{k}+\alpha_{2}\right)+1
-\end{equation*}
-
-% Use this environment for inserting source code examples.
-% Note, that this will print out text in the document exactly as you type it here in the .tex file. That means you can add empty spaces, tabs, blank lines here and they will be printed out like this in the document.). 
-%For more information check out the LaTeX-Package 'fancyvbr' documentation
-%
 \begin{Verbatim}[fontfamily=courier, xleftmargin=\parindent]
-Use this style for program code, 
-for example:
-main() {
-    printf("Hello World\n");    
-}
-Extended code examples that are likely
-to be too wide for the two-column page
-layout used by CMJ should be prepared
-as figures, using text rather than an
-image format. You don't need to worry
-about this for the initial submission, 
-but it will become important after 
-acceptance for the final submission.
+i_result clang_compile S_code, S_options [, S_libraries]
 \end{Verbatim}
 
-%use of references
-Some examples for the use of references in the text follow.
-%author name in sentence, single authors
-Single authors, listed separately in text: for instance, \citet*{Ano08} or \citet*{Bele68}.
-%author name in sentence, multiple authors
-Multiple authors, in text: \citet*{VeRo00}; \citet*{AtDa04}.
-Parenthetic citations: \citep*{AtDa04, Ther99}.
-Citation as a single parenthetic note, including supplementary information, \citep*[see also][which includes detailed diagrams]{Zica02}.
-Please don't type parentheses around a \texttt{citet*{}} directive when you want a citation in parentheses---that's what the \texttt{citep*{}} family of directives are there for.
-And it is preferable to use the starred versions of BibTeX directives (\texttt{citet*\{\}} rather than \texttt{citet\{\}}, etc.)
+\begin{description}
+\item[\texttt{S\_code}] This is the C++ source code to be compiled. It can be a multi-line string literal enclosed in \verb|{{| and \verb|}}|. Any slashes in the code must be escaped, i.e.\ for a newline use \verb|\\n| and not \verb|\n|. This code must declare and define a 
+uniquely named entry point function with the signature:
 
-Please consult the enclosed .bst file and the BibTeX documentation for further examples. 
+\begin{Verbatim}[fontfamily=courier, xleftmargin=\parindent]
+extern "C" int (*)(CSOUND *csound);
+\end{Verbatim}
 
+\item[\texttt{S\_options}] This is any number of standard compiler options, delimited by spaces, as would be given to gcc or clang. It can be a multi-line string literal enclosed in \verb|{{| and \verb|}}|. If there are no custom compiler options, an empty string must be passed. If the options include \verb|-v|, not only are Clang diagnostics printed, but also additional diagnostics from the Clang opcodes. It is recommended to pass \verb|-march=native| to take advantage of all possible LLVM optimizations for the target architecture.
+\item[\texttt{S\_libraries}] This parameter is optional and can be any number of dynamic link libraries given as fully specified filepaths separated by spaces. The parameter can be a multi-line string literal enclosed in \verb|{{| and \verb|}}|. The standard \texttt{-l} compiler option does not work in this context.
+\item[\texttt{i\_result}] is returned as 0 for success and non-0 for failure. 
+\end{description}
+
+The \verb|clang_compile| opcode runs at Csound's initialization time, which 
+comes after \verb|csoundStart| has been called. If the opcode is called from the 
+orchestra header, i.e. in \verb|instr 0|, then compilation and execution is done during Csound's init pass for \verb|instr 0|. If the opcode is called from a regular Csound 
+instrument, then compilation and execution is done during Csound's init pass for that particular instrument instance.
+
+Once \verb|clang_compile| has compiled a module, Csound will immediately 
+call the entry point function in that module. At that very time, the LLVM ORC 
+compiler will translate the IR code in the module to machine language, perform 
+relocations, resolve symbols, and otherwise load and link the module into the 
+running Csound process, just like any other C++ module.
+
+The entry point function may call any Csound API functions that are members of 
+the \verb|CSOUND| struct, define classes and structs, call any public symbol in any 
+loaded dynamic link library, or indeed do anything at all that can be done 
+using C++ code.
+
+For example, the module may use an external shared library to assist with 
+algorithmic composition, then translate the generated score to a Csound score, 
+then call \verb|csound->InputMessage| to schedule that score for immediate 
+performance.
+
+However, one of the most significant uses of \verb|clang_compile| is to compile C++
+code into classes that can perform the work of Csound opcodes. This is 
+done by implementing the \verb|ClangInvokable| interface, as described below.
+
+\subsection{clang\_invoke}
+
+\begin{Verbatim}[fontfamily=courier, xleftmargin=\parindent]
+[m_out_1,...] clang_invoke S_invokeable, i_thread [, m_in_1,...]
+\end{Verbatim}
+
+\begin{description}
+\item[\texttt{S\_invokable}] This is the unique name of a factory function with signature \verb|ClangInvokable *(*);| in the compiled modules that returns a new instance of an object that implements the pure virtual \verb|ClangInvokable| interface:
+
+\begin{Verbatim}[fontfamily=courier, xleftmargin=\parindent]
+struct ClangInvokable {
+	virtual ~ClangInvokable{};
+	virtual int init(CSOUND *csound, OPDS *opds, 
+		MYFLT **outs, MYFLT **ins) = 0;
+	virtual int kontrol(CSOUND *csound, 
+		MYFLT **outs, MYFLT **outs) = 0;
+	virtual int noteoff(CSOUND *csound) = 0;
+};
+\end{Verbatim}
+
+\item[\texttt{i\_thread}] This must be 1 if the \verb|ClangInvokable::init| method will be called once during the lifetime of the containing instrument instance, but not the \verb|ClangInvokable::kontrol| method; 2 if if the \verb|ClangInvokable::init| method will not be called but the \verb|ClangInvokable::kontrol| will be called once per kperiod during the lifetime of the containing instrument instance; and 3 if the \verb|ClangInvokable::init| method will be called once and then the \verb|ClangInvokable::kontrol| method will be called once per kperiod during the lifetime of the containing instrument instance.
+\item[\texttt{[m\_in1, m\_in2,...}] are 0 or more \verb|MYFLT **ins| arguments to the \verb|ClangInvokable| methods. They correspond exactly to the types, sizes, shapes, and rates of the parameters (following the \verb|CSOUND| pointer and the \verb|OPDS| pointer) prepared by Csound to call the \verb|clang_invoke| opcode, which in turn will call \verb|ClangInvokable|. These can be scalar floats, a-rate arrays of floats, strings, streaming phase vocoder frames, or any other data type as specified for use by opcodes of the Csound orchestra language in the \verb|entry1.c| \citep{entry1} file.
+\item[\texttt{[m\_out1, m\_out2,...}] are 0 or more \verb|MYFLT **outs| arguments to the \verb|ClangInvokable| methods. They correspond exactly to the types, sizes, shapes, and rates of the parameters returned to Csound by the \verb|clang_invoke| opcode, which in turn has obtained them from the \verb|ClangInvokable| outputs. These again can be scalar floats, a-rate arrays of floats, strings, streaming phase vocoder frames, or any other data type as specified for use by opcodes of the Csound orchestra language in the \verb|entry1.c| \citep{entry1} file.
+\end{description}
+
+\noindent The enormous flexibility yet simplicity of the interface between Csound and its opcodes, still using the original design of Barry Vercoe, has greatly simplified the design of the Clang opcodes.
+
+The \verb|S_invokeable| symbol is looked up in the LLVM execution session 
+of the global ORC compiler, and a new instance of the \verb|ClangInvokable| class 
+is created. 
+
+\verb|clang_invoke| then calls the \verb|ClangInvokable::init| method with 
+the input and output parameters, and any values computed by the 
+\verb|ClangInvokable| are returned in the elements of the \verb|outs| argument.
+
+If the \verb|i_thread| parameter is 2 or 3, the \verb|ClangInvokable::kontrol| method is 
+called once per kperiod during the lifetime of the opcode. Any values 
+computed by the \verb|ClangInvokable| are returned in the elements of the \verb|outs| argument. 
+
+The \verb|clang_invoke| opcode is very efficient. The code for a \verb|ClangInvokable| class is compiled the very first time it is accessed and thereafter it is native machine language. The \verb|ClangInvokable::init| method creates an instance of its object and stores its address. After that invoking \verb|ClangInvokable::kontrol| every kperiod is just as efficient as invoking Csound's native opcodes.
+
+When the Csound instrument that has created the \verb|clang_invoke| opcode is 
+turned off, Csound calls the \verb|ClangInvokable::noteoff| method. At that 
+time, the \verb|ClangInvokable| should release any system resources or memory 
+that it has acquired.
+
+The \verb|ClangInvokable| instance is then deleted by the \verb|clang_invoke| opcode.
+
+\section{Examples}
+
+\subsection{clang\_hello.csd}
+
+\subsection{clang\_example.csd}
 
 %References
 \bibliographystyle{cmj}
