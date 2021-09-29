@@ -83,11 +83,11 @@ Post will be sent to that address.)
 
 
 \begin{abstract}
-	This article considers why musicians and researchers might want to use a C++ compiler embedded in a software synthesis (SWSS) system, and how such a compiler can be implemented and used, by presenting new opcodes for the Csound SWSS that embed the Clang/LLVM on-request compiler (ORC). C++ source code may be embedded in a regular Csound orchestra file, compiled by the \texttt{Clang\_compile} opcode, and invoked during performance by the \texttt{Clang\_invoke} opcode. Uses include writing new signal processing and synthesis code in C++ right in the SWSS, full-strength algorithmic composition right in the SWSS, calling into external dynamic link libraries right from the SWSS, creating native user interfaces for a piece right in the SWSS, and more. The technology and patterns presented here could be adapted for use in any SWSS that supports the C calling convention. 
+	This article considers why musicians and researchers might want to use a C++ compiler embedded in a software synthesis (SWSS) system, and how such a compiler can be implemented and used, by presenting new opcodes for the Csound SWSS that embed the Clang/LLVM on-request compiler (ORC). C++ source code may be embedded in a regular Csound orchestra file, compiled by the \texttt{clang\_compile} opcode, and invoked during performance by the \texttt{clang\_invoke} opcode. Uses include writing new signal processing and synthesis code in C++ right in the SWSS, full-strength algorithmic composition right in the SWSS, calling into external dynamic link libraries right from the SWSS, creating native user interfaces for a piece right in the SWSS, and more. The technology and patterns presented here could be adapted for use in any SWSS that supports the C calling convention. 
 \end{abstract}
 
 \section{<<BEGIN ARTICLE>>}
-% Why do it?
+
 Let us begin with the question, \textit{Why do this?} Basically, to provide more computer power while, at the same time, speeding up the musician's workflow. In computer music, and in particular in algorithmic composition, there is generally a work cycle that goes something like this:
 
 \begin{enumerate}
@@ -109,9 +109,9 @@ Let us begin with the question, \textit{Why do this?} Basically, to provide more
 \item \textit{Audition time}: Use the software to actually render the music to real-time audio, and listen to it critically. If you are not satisfied, go back to steps 1, 2, 3, or 4.
 \end{enumerate}
 
-Today also, a new paradigm for coding and composing is emerging. This involves the use of a SWSS that is also a development system. Sometimes this can mean using a SWSS that is designed as an all-in-one integrated development system, such as SuperCollider \citep{supercollider, mccartney2002rethinking}. Sometimes this can mean using the SWSS from a dynamic language, as when Csound \citep{csoundmain, lazzarini2016csound, csoundbook} is used from Python \citep{python} and the piece also is composed in Python using a library such as musx \citep{musx} or CsoundAC \citep{csoundextended}.
+For some time now, a new paradigm for coding and composing has been emerging. This involves the use of a SWSS that is also a development system. Sometimes this can mean using a SWSS that is designed as an all-in-one integrated development system, such as SuperCollider \citep{supercollider, mccartney2002rethinking}. Sometimes this can mean using the SWSS from a dynamic language, as when Csound \citep{csoundmain, lazzarini2016csound, csoundbook} is used from Python \citep{python} and the piece also is composed in Python using a library such as musx \citep{musx} or CsoundAC \citep{csoundextended}.
 
-And sometimes, and this is perhaps more interesting, it can mean embedding a development system in the SWSS, as when the Faust language \citep{faust, orlarey2009faust} is embedded in Csound using the Faust opcodes \citep{Lazzarini2014, faustcompile, faustdsp}. This is what we present here: new Clang opcodes for Csound \citep{clangpcodes}. The user writes C++ code right in the Csound orchestra, the Clang opcodes automatically compile that source code at performance time, and the compiled code runs as part of the Csound performance... at the speed of native C++.
+And sometimes, and this is perhaps more interesting, it can mean embedding a development system in the SWSS, as when the Faust language \citep{faust, orlarey2009faust} is embedded in Csound using the Faust opcodes \citep{Lazzarini2014, faustcompile, faustdsp}. This is what we present here: new Clang opcodes for Csound \citep{clangopcodes}. The user writes C++ code right in the Csound orchestra, the Clang opcodes automatically compile that source code at performance time, and the compiled code runs as part of the Csound performance... at the speed of native C++.
 
 The effect then is to collapse steps 1, 2, 3, and 4 above, with this result:
 
@@ -126,7 +126,7 @@ And that is as it should be.
 
 \section{The Runtime Compiler}
 
-A \textit{runtime compiler} is a computer that translates source code into executable form during the run time of some host program without requiring the user of a build system or external programs that preprocess, compile, and link the code. For a dynamic language such as Python or, for that matter, Csound, the host program is the compiler itself. Yes, any SWSS that translates source code or user-defined patches into sound without external assistance is a runtime compiler.
+A \textit{runtime compiler} is a computer system that translates source code into executable form during the run time of some host program without requiring the user of a build system or external programs that preprocess, compile, and link the code. For a dynamic language such as Python or, for that matter, Csound, the host program is the compiler itself. Yes, any SWSS that translates source code or user-defined patches into sound without external assistance is a runtime compiler.
 
 Until recently, although runtime compilers and interpreters for C and C++ certainly did exist, thanks to numerous issues they were not generally used. With the advent of the low-level virtual machine (LLVM) and Clang projects \citep{llvm}, that has changed. The primary motive of Clang/LLVM is to provide a modular system of dynamic link libraries that implement a drop-in replacement for the widely used GNU Compiler Collecton (GCC) \citep{gcc}. But the modular design of LLVM/Clang greatly facilities the implementation of runtime compilers either for domain-specific languages (as with the Faust DSP system), or for general-purpose C++ (as with the Clang opcodes presented here).
 
@@ -148,7 +148,7 @@ On the most basic level, the Clang/LLVM system works as follows:
 
 For a \textit{runtime} compiler, the back end is modified to provide for emitting, loading, relocating, and linking native machine language at run time. The Clang/LLVM system that does this is called the on-request compiler (ORC) \citep{llvmorc}. It is a type of just-in-time (JIT) compiler that emits native machine language for a symbol the very first time the address of that symbol is requested from the LLVM execution session. The ORC compiler and LLVM can load and link external dynamic link libraries --- whether system libraries, or user libraries, or LLVM's own in-memory JITDylib libraries --- at run time, and thus perform the functions of a build system linker or an operating system's linking loader. 
 
-In Figure \ref{fig:llvm}, the components involved in the Csound opcodes are labeled in boldface italics. The components used by the standard, command-line toolchain include a linker and are connected with dotted arrows. If the opcodes are compiled for another architecture such as ARM, the ORC compiler and the LLVM context will adapt and emit the correct code for that architecture.
+In Figure \ref{fig:llvm}, the components involved in the Csound opcodes are labeled in boldface italics. The components used by the standard, command-line toolchain include a linker and are connected with dotted arrows. If source code is are compiled for another architecture such as ARM, the ORC compiler and the LLVM context will adapt and emit the correct code for that architecture.
 
 As an example of how to embed a runtime C++ compiler into a SWSS, we present two new opcodes for Csound: \texttt{clang\_compile} and \texttt{clang\_invoke}. The Clang/LLVM code used in these opcodes is adapted and expanded from the "clang-interpreter" example in the LLVM Project's GitHub repository \citep{clanginterpreter}. The high-level design is similar to Csound's Faust opcodes \citep{Lazzarini2014}: one opcode to compile source code (e.g. \texttt{faustcompile} \citep{faustcompile}, \texttt{clang\_compile}), another opcode to invoke compiled code (e.g. \texttt{fuastdsp} \citep{faustdsp}, \texttt{clang\_invoke}). Figure \ref{fig:clangopcodes} shows how these opcodes relate to the Clang/LLVM components.
 
@@ -178,7 +178,7 @@ extern "C" int (*)(CSOUND *csound);
 \end{Verbatim}
 
 \item[\texttt{S\_options}] This is any number of standard compiler options, delimited by spaces, as would be given to gcc or clang. It can be a multi-line string literal enclosed in \verb|{{| and \verb|}}|. If there are no custom compiler options, an empty string must be passed. If the options include \verb|-v|, not only are Clang diagnostics printed, but also additional diagnostics from the Clang opcodes. It is recommended to pass \verb|-march=native| to take advantage of all possible LLVM optimizations for the target architecture.
-\item[\texttt{S\_libraries}] This parameter is optional and can be any number of dynamic link libraries given as fully specified filepaths separated by spaces. The parameter can be a multi-line string literal enclosed in \verb|{{| and \verb|}}|. The standard \texttt{-l} compiler option does not work in this context.
+\item[\texttt{S\_libraries}] This parameter is optional and can be any number of dynamic link libraries given as fully specified filepaths separated by spaces. The parameter can be a multi-line string literal enclosed in \verb|{{| and \verb|}}|. The standard \texttt{-l} compiler option does \textit{not} work in this context.
 \item[\texttt{i\_result}] is returned as 0 for success and non-0 for failure. 
 \end{description}
 
@@ -187,11 +187,11 @@ comes after \verb|csoundStart| has been called. If the opcode is called from the
 orchestra header, i.e. in \verb|instr 0|, then compilation and execution is done during Csound's init pass for \verb|instr 0|. If the opcode is called from a regular Csound 
 instrument, then compilation and execution is done during Csound's init pass for that particular instrument instance.
 
-Once \verb|clang_compile| has compiled a module, Csound will immediately 
-call the entry point function in that module. At that very time, the LLVM ORC 
-compiler will translate the IR code in the module to machine language, perform 
-relocations, resolve symbols, and otherwise load and link the module into the 
-running Csound process, just like any other C++ module.
+Once \verb|clang_compile| has compiled a module, Csound immediately 
+calls the entry point function in that module. At that very time, the LLVM ORC 
+compiler translates the IR code in the module to machine language, performs 
+relocations, resolves symbols, and otherwise loads and links the module into the 
+running Csound process, just like a statically compiled C++ dynamic link library.
 
 The entry point function may call any Csound API functions that are members of 
 the \verb|CSOUND| struct, define classes and structs, call any public symbol in any 
@@ -204,7 +204,7 @@ then call \verb|csound->InputMessage| to schedule that score for immediate
 performance.
 
 However, one of the most significant uses of \verb|clang_compile| is to compile C++
-code into classes that can perform the work of Csound opcodes. This is 
+code into objects that can perform the work of Csound opcodes. This is 
 done by implementing the \verb|ClangInvokable| interface, as described below.
 
 \subsection{clang\_invoke}
@@ -214,7 +214,7 @@ done by implementing the \verb|ClangInvokable| interface, as described below.
 \end{Verbatim}
 
 \begin{description}
-\item[\texttt{S\_invokable}] This is the unique name of a factory function with signature \verb|ClangInvokable *(*);| in the compiled modules that returns a new instance of an object that implements the pure virtual \verb|ClangInvokable| interface:
+\item[\texttt{S\_invokable}] This is the unique name of a factory function with signature \verb|ClangInvokable *(*);| that creates and returns a new instance of an object implementing the pure virtual \verb|ClangInvokable| interface:
 
 \begin{Verbatim}[fontfamily=courier, xleftmargin=\parindent]
 struct ClangInvokable {
@@ -227,16 +227,18 @@ struct ClangInvokable {
 };
 \end{Verbatim}
 
-\item[\texttt{i\_thread}] This must be 1 if the \verb|ClangInvokable::init| method will be called once during the lifetime of the containing instrument instance, but not the \verb|ClangInvokable::kontrol| method; 2 if if the \verb|ClangInvokable::init| method will not be called but the \verb|ClangInvokable::kontrol| will be called once per kperiod during the lifetime of the containing instrument instance; and 3 if the \verb|ClangInvokable::init| method will be called once and then the \verb|ClangInvokable::kontrol| method will be called once per kperiod during the lifetime of the containing instrument instance.
-\item[\texttt{[m\_in1, m\_in2,...}] are 0 or more \verb|MYFLT **ins| arguments to the \verb|ClangInvokable| methods. They correspond exactly to the types, sizes, shapes, and rates of the parameters (following the \verb|CSOUND| pointer and the \verb|OPDS| pointer) prepared by Csound to call the \verb|clang_invoke| opcode, which in turn will call \verb|ClangInvokable|. These can be scalar floats, a-rate arrays of floats, strings, streaming phase vocoder frames, or any other data type as specified for use by opcodes of the Csound orchestra language in the \verb|entry1.c| \citep{entry1} file.
-\item[\texttt{[m\_out1, m\_out2,...}] are 0 or more \verb|MYFLT **outs| arguments to the \verb|ClangInvokable| methods. They correspond exactly to the types, sizes, shapes, and rates of the parameters returned to Csound by the \verb|clang_invoke| opcode, which in turn has obtained them from the \verb|ClangInvokable| outputs. These again can be scalar floats, a-rate arrays of floats, strings, streaming phase vocoder frames, or any other data type as specified for use by opcodes of the Csound orchestra language in the \verb|entry1.c| \citep{entry1} file.
+\item[\texttt{i\_thread}] This must be 1 if the \verb|ClangInvokable::init| method will be called once during the lifetime of the containing instrument instance, but not the \verb|ClangInvokable::kontrol| method; 2 if if the \verb|ClangInvokable::init| method will not be called, but the \verb|ClangInvokable::kontrol| will be called once per kperiod during the lifetime of the containing instrument instance; and 3 if the \verb|ClangInvokable::init| method will be called first, and then the \verb|ClangInvokable::kontrol| method will be called once per kperiod during the lifetime of the containing instrument instance.
+\item[\texttt{[m\_in1, m\_in2,...}] are 0 or more \verb|MYFLT *| arguments to the \verb|ClangInvokable| methods. They correspond exactly to the types, sizes, shapes, and rates of the parameters (following the \verb|CSOUND| pointer and the \verb|OPDS| pointer) passed by Csound to the \verb|clang_invoke| opcode, which in turn will pass them to the \verb|ClangInvokable| object. These can be scalar floats, a-rate arrays of floats, strings, streaming phase vocoder frames, or any other data type as specified for use by opcodes of the Csound orchestra language in the \verb|entry1.c| \citep{entry1} file.
+\item[\texttt{[m\_out1, m\_out2,...}] are 0 or more \verb|MYFLT **| arguments to the \verb|ClangInvokable| methods. They correspond exactly to the types, sizes, shapes, and rates of the arguments returned to Csound by the \verb|clang_invoke| opcode, which in turn has obtained them from the \verb|ClangInvokable| outputs. These again can be any data type as specified for use by opcodes of the Csound orchestra language in the \verb|entry1.c| \citep{entry1} file.
 \end{description}
 
-\noindent The enormous flexibility yet simplicity of the interface between Csound and its opcodes, still using the original design of Barry Vercoe, has greatly simplified the design of the Clang opcodes.
+Please note, the \verb|ClangInvokable.hpp| header file defines a \verb|ClangInvokableBase| class that provides concrete stubs for all of the pure virtual functions of \verb|ClangInvokable|, along with convenience methods to simplify creating an invokable object.
+
+\noindent The enormous flexibility yet simplicity of the interface between Csound and its opcodes, still using Barry Vercoe's original design, has greatly simplified the design of the Clang opcodes.
 
 The \verb|S_invokeable| symbol is looked up in the LLVM execution session 
 of the global ORC compiler, and a new instance of the \verb|ClangInvokable| class 
-is created. 
+is created and returned.
 
 \verb|clang_invoke| then calls the \verb|ClangInvokable::init| method with 
 the input and output parameters, and any values computed by the 
@@ -246,7 +248,7 @@ If the \verb|i_thread| parameter is 2 or 3, the \verb|ClangInvokable::kontrol| m
 called once per kperiod during the lifetime of the opcode. Any values 
 computed by the \verb|ClangInvokable| are returned in the elements of the \verb|outs| argument. 
 
-The \verb|clang_invoke| opcode is very efficient. The code for a \verb|ClangInvokable| class is compiled the very first time it is accessed and thereafter it is native machine language. The \verb|ClangInvokable::init| method creates an instance of its object and stores its address. After that invoking \verb|ClangInvokable::kontrol| every kperiod is just as efficient as invoking Csound's native opcodes.
+The \verb|clang_invoke| opcode is very efficient. The code for a \verb|ClangInvokable| class is compiled the very first time it is accessed, and thereafter it runs as native machine language. The \verb|ClangInvokable::init| method initializes the object and then stores its address. After that, invoking \verb|ClangInvokable::kontrol| every kperiod is as efficient as invoking Csound's native opcodes plus one vtable dereference.
 
 When the Csound instrument that has created the \verb|clang_invoke| opcode is 
 turned off, Csound calls the \verb|ClangInvokable::noteoff| method. At that 
@@ -259,7 +261,174 @@ The \verb|ClangInvokable| instance is then deleted by the \verb|clang_invoke| op
 
 \subsection{clang\_hello.csd}
 
+The purpose of this example is the same as the purpose of the archetypal "Hello, world!" program. It demonstrates as simply as possible how to set up and use the opcodes, and 
+tests on a basic level whether they are working. There is one C++ module defined in the Csound orchestra as follows:
+
+\begin{Verbatim}[fontfamily=courier, xleftmargin=\parindent]
+gS_source_code = {{
+
+#include <csound/csdl.h>
+#include <cstdio>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
+#include "clang_invokable.hpp"
+
+// Must be defined in this module to work around 
+// `__dso_handle` not being defined in the C++ startup code.
+
+void* __dso_handle = (void *)&__dso_handle;
+
+extern "C" int csound_main(CSOUND *csound) {
+    csound->Message(csound, "\\n>>>>>>> Hello, world! 
+    	This proves csound_main has been called 
+    	with csound: %p.\\n", csound);
+    std::vector<std::string> strings;
+    strings.push_back("A test string...");
+    csound->Message(csound, "\\n>>>>>>> This proves that 
+    	a lot of libstdc++ stuff works: 
+    	strings.size(): %ld strings[0]: %s\\n", 
+    	strings.size(), strings[0].c_str());
+    return 0;
+};
+
+class Hello : public ClangInvokableBase {
+    public:
+    int init(CSOUND *csound, OPDS *opds, MYFLT **outputs, 
+    	MYFLT **inputs) override {
+	    csound->Message(csound, ">>>>>>> This proves that 
+	    	`clang_invoke` has called into this module.\\n");
+	    const char *result = ">>>>>>> This proves that 
+	    	`clang_invoke` can be used like 
+	    	an opcode that returns 
+	    	a string and multiplies a number by 2.";
+	    STRINGDAT *message = (STRINGDAT *)outputs[0];
+		message->data = csound->Strdup(csound, 
+			(char *)result);
+        message->size = std::strlen(result);
+	    MYFLT number = *inputs[0];
+	    MYFLT product = number * 2.;
+	    *outputs[1] = product;
+        return OK;
+    }
+};
+
+extern "C" {
+	ClangInvokable *hello_factory() {
+	    auto instance = new Hello();
+	    std::fprintf(stderr, ">>>>>>> hello_factory 
+	    	newed: %p\\n", instance);
+	    return instance;
+	}
+};
+
+}}
+
+gi_result clang_compile "csound_main", gS_source_code, 
+	"-v -std=c++14 -I/usr/local/include/csound -I.", 
+	"/usr/lib/gcc/x86_64-linux-gnu/9/libstdc++.so 
+	/usr/lib/gcc/x86_64-linux-gnu/9/libgcc_s.so 
+	/usr/lib/x86_64-linux-gnu/libm.so 
+	/usr/lib/x86_64-linux-gnu/libpthread.so"
+\end{Verbatim}
+
+This example runs in Csound and prints the following messages:
+
+\begin{Verbatim}[fontfamily=courier, xleftmargin=\parindent]
+csound "/home/mkg/clang-opcodes/clang_hello.csd" -+msg_color=0
+**** Licence Information ****
+clang_hello.csd - this file tests the new Clang JIT compiler opcodes for 
+Csound. This does nothing except prove the basics work.
+
+Diagnostics starting "*******" are from Csound orchestra code.
+Diagnostics starting "#######" are from Clang opcode internals.
+Diagnostics starting ">>>>>>>" are from C++ code.
+
+**** End of Licence Information ****
+******* I'm about to try compiling a simple test C++ module....
+####### clang_compile: entry_point: csound_main
+####### clang_compile: executable_filepath: /usr/local/bin/csound
+####### clang_compile: triple: x86_64-pc-linux-gnu
+####### clang_compile: invoking "csound_main" at 0x7fc54eed3070:
+>>>>>>> Hello, world! This proves csound_main has been called 
+	with csound: 0x55fc3bd84940.
+>>>>>>> This proves that a lot of libstdc++ stuff works: 
+	strings.size(): 1 strings[0]: A test string...
+####### clang_compile: "csound_main" returned: 0
+SECTION 1:
+B  0.000 ..  5.000 T  5.000 TT  5.000 M:      0  
+new alloc for instr 1:
+******* Trying to invoke Hello...
+####### clang_invoke::init: factory name: "hello_factory"
+####### clang_invoke::init: factory function: 0x7fc54eed3230
+>>>>>>> hello_factory newed: 0x55fc3cbf3c90
+####### clang_invoke::init: instance: 0x55fc3cbf3c90 thread: 1
+>>>>>>> This proves that `clang_invoke` has called into this module.
+####### clang_invoke::init: invokable::init: result: 0
+******* `clang_invoke` returned: 
+	">>>>>>> This proves that `clang_invoke` can be used 
+	as an opcode that returns a string 
+	and multiplies a number by 2." and 4
+####### clang_invoke::noteoff
+####### clang_invoke::noteoff: invokable::noteoff: result: 0
+B  5.000 .. 30.000 T 30.000 TT 30.000 M:      0  
+Score finished in csoundPerform().
+####### clang_compile: deleting JITCompiler 0x55fc3d0a8b20 
+	and ending execution session.
+####### csoundModuleDestroy: released jit_compiler: now (nil)
+>Exit code: 0
+\end{Verbatim}
+
 \subsection{clang\_example.csd}
+
+This example demonstrates production-level use of the opcodes. The Csound orchestra uses the Clang opcodes to:
+
+\begin{enumerate}
+\item Embed C++ source code for a sophisticated physically modelled guitar instrument, and compile it for use like an opcode. The guitar consists of over 1,400 lines of C++ code.
+\item Provide a Csound instrument definition that uses \verb|clang_invoke| to call the C++ guitar like an opcode.
+\item Embed C++ source code for a reverberation algorithm that is constructed using the Synthesis Toolkit in C++ \citep{thestk, stkbook}, which is loaded as a dynamic link library.
+\item Provide a Csound instrument definition that uses \verb|clang_invoke| to call the reverb like an opcode.
+\item Provide a score generator, written in C++ using the standard C++ library and the Eigen library for linear algebra \citep{eigen3}, that uses the multiple copy reducing machine algorithm \citep{chaosandfractals} to generate a Csound score in the entry point for the module. The score is generated as a string and immediately sent to Csound for performance using the \verb|csound->inputMessage| method.
+\end{enumerate}
+
+\section{Discussion}
+
+\subsection{User Experience -- Pros and Cons}
+
+For one who is both a Csound user and a C++ programmer, using the Clang opcodes feels quite natural, and it does definitely speed up the computer music workflow. It is particularly gratifying to debug a C++ program like the score generator --- and compile and test it simply by running Csound again, hearing the results immediately.
+
+It has also been easy to use external class libraries like the STK \citep{thestk} as building blocks to create new DSP routines. It is quite similar to writing a plugin opcode, except that there is no need to create a build system, and again, the results of changing the code can be heard immediately.
+
+Finally, in all Csound orchestras tested to date on a workstation of moderate power, the time spent by Csound to compile several modules of embedded C++ code has only been 4 or 5 seconds total at startup time.
+
+Of course, the fully specified filepaths for dynamic link library dependencies may need to be manually edited for different platforms.
+
+And the need to subclass \verb|ClangInvokableBase| to create something usable as an opcode does present a small amount of overhead.
+
+The project has not yet been tested on large masses of C++ code.
+
+\subsection{Future Directions}
+
+There are many possible future directions for this project. Here we mention only a few.
+
+\subsubsection{Implementing in Other SWSS}
+
+The ORC compiler could easily be embedded in any SWSS that has a plugin architecture based on the "C" calling convention. For example, the ORC compiler could be embedded in SuperCollider \citep{supercollider}, Pure Data \citep{pd}, ChucK \citep{chuck, chuckcmj}, or Max \citep{max}. 
+
+All the source code for the Clang opcodes is found in one file, \verb|clang_opcodes.cpp|. The front end C++ compiler is implemented entirely in the \verb|ClangCompile::init| method. This includes parsing compiler options, compiling the source code, and loading dynamic link library dependencies. The back end ORC compiler is implemented entirely in the \verb|JITCompiler| class. 
+
+Different SWSS each have their own way of loading and calling plugins, and the \verb|clang_invoke| opcode would have to be adapted suitably. This would most naturally be done by defining a different form of the \verb|ClangInvokable| interface, and machinery for calling it, for each SWSS.
+
+\subsubsection{Improving the Runtime Compiler}
+
+The \verb|JITCompiler| class in \verb|clang_compile| is based on the very simplified, cut-down JIT compiler example in the LLVM repository \citep{clanginterpreter}. It is evident from the code and comments in this example that using the Clang/LLVM infrastructure in this way is a work in progress for the LLVM project. A multithreaded version of the runtime compiler also can be found in the LLVM repository, and using that might speed up compilation. Cling, a full-bore C/C++ interpreter \citep{vasilev2012cling, clingrepo} used in CERN's ROOT Data Analysis Framework \citep{ROOT}, is also implemented using the ORC compiler and could perhaps be adapted with some advantages.
+
+In addition, currently the Clang opcodes are not re-entrant and the results of running two Csound performances using the Clang opcodes in the same process are undefined. It should be possible to create one LLVMContext for each instance of Csound in the same address space, and the opcodes should then be fully re-entrant.
+
+\subsubsection{Foreign Function Interface for SWSS?}
+
+It should be possible to extend the ideas behind \verb|ClangInvokable| to provide a unit generator in any SWSS that can transparently call any exported "C" function in any dynamic link library, perhaps using template metaprogramming.
 
 %References
 \bibliographystyle{cmj}

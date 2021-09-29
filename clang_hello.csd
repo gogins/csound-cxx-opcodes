@@ -2,17 +2,17 @@
 <CsLicense>
 
 clang_hello.csd - this file tests the new Clang JIT compiler opcodes for 
-Csound. This does nothing beside prove the basics work.
+Csound. This does nothing except prove the basics work.
 
 Author: Michael Gogins
 
 Diagnostics starting with "*******" are from native Csound orchestra code.
-Diagnostics starting with "#######" are from the Clang opcodes.
-Diagnostics starting with ">>>>>>>" are from C++ code in the Csound orchestra.
+Diagnostics starting with "#######" are from the Clang opcode internals.
+Diagnostics starting with ">>>>>>>" are from C++ code.
 
 </CsLicense>
 <CsOptions>z
--m195 -otest.wav
+-m195 --opcode-lib="./clang_opcodes.so" -otest.wav
 </CsOptions>
 <CsInstruments>
 
@@ -22,13 +22,12 @@ gS_source_code = {{
 
 #include <csound/csdl.h>
 #include <cstdio>
-#include <cstdlib>
+//#include <cstdlib>
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
 #include "clang_invokable.hpp"
-
 
 /**
  * Must be defined in this module to work around `__dso_handle` not being 
@@ -49,7 +48,7 @@ extern "C" int csound_main(CSOUND *csound) {
 class Hello : public ClangInvokableBase {
     public:
     int init(CSOUND *csound, OPDS *opds, MYFLT **outputs, MYFLT **inputs) override {
-	    csound->Message(csound, ">>>>>>> Hello, world! This proves that `clang_invoke` has called into this module.\\n");
+	    csound->Message(csound, ">>>>>>> This proves that `clang_invoke` has called into this module.\\n");
 	    const char *result = ">>>>>>> This proves that `clang_invoke` can be used as an opcode that returns a string and multiplies a number by 2.";
 	    STRINGDAT *message = (STRINGDAT *)outputs[0];
 	    message->data = csound->Strdup(csound, (char *)result);
@@ -71,12 +70,12 @@ extern "C" {
 
 }}
 
-gi_result clang_compile "csound_main", gS_source_code, "-v -std=c++14 -I/usr/local/include/csound -I. -stdlib=libstdc++", "/usr/lib/gcc/x86_64-linux-gnu/9/libstdc++.so /usr/lib/gcc/x86_64-linux-gnu/9/libgcc_s.so /usr/lib/x86_64-linux-gnu/libm.so /usr/lib/x86_64-linux-gnu/libpthread.so"
+gi_result clang_compile "csound_main", gS_source_code, "-v -std=c++14 -I/usr/local/include/csound -I.", "/usr/lib/gcc/x86_64-linux-gnu/9/libstdc++.so /usr/lib/gcc/x86_64-linux-gnu/9/libgcc_s.so /usr/lib/x86_64-linux-gnu/libm.so /usr/lib/x86_64-linux-gnu/libpthread.so"
 
 instr 1
 prints "******* Trying to invoke Hello...\n"
 S_message, i_number clang_invoke "hello_factory", 1, 2
-prints "******* Hello, world! `clang_invoke` returned: \"%s\" and %d\n", S_message, i_number
+prints "******* `clang_invoke` returned: \"%s\" and %d\n", S_message, i_number
 endin
 
 </CsInstruments>
