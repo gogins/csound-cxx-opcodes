@@ -1,10 +1,14 @@
 /**
  * # clang
  *
+ * Author: Michael Gogins
+ * https://github.com/gogins
+ * http://michaelgogins.tumblr.com
+ *
  * This file implements Csound opcodes that compiles C or C++ source code,
  * embedded in tne Csound orchestra, for any purpose, and invokes the compiled 
  * The compiler is a simplified, embedded instance of the Clang/LLVM 
-  * on-request compiler (ORC).
+ * on-request compiler (ORC).
  *
  * This code is based on the "compiler_instance C Interpreter Example:"
  * examples/clang-interpreter/main.cpp.
