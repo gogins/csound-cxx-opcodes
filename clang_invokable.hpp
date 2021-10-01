@@ -1,15 +1,29 @@
 #pragma once
+/*
+clang_invokable.hpp - this file is part of clang-opcodes.
+
+Copyright (C) 2021 by Michael Gogins
+
+clang-opcodes is free software; you can redistribute it
+and/or modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+clang-opcodes is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with clang-opcodes; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+02110-1301 USA
+*/
 
 #include <csdl.h>
 #include <cstring>
 
 /**
- * Author: Michael Gogins
- * https://github.com/gogins
- * http://michaelgogins.tumblr.com
- * 
- * This file is licensed by the GNU Lesser General Public License, version 2.1.
- *
  * Defines the pure abstract interface implemented by Clang modules to be 
  * called by Csound using the `clang_invoke` opcode.
  */
@@ -21,7 +35,7 @@ struct ClangInvokable {
 	 * the values returned from the `clang_invoke` opcode. Performs the 
 	 * same work as `iopadr` in a standard Csound opcode definition. The 
 	 * `opds` argument can be used to find many things about the invoking 
-	 * opcode and its enclosing instrument.
+     * opcde and its enclosing instrument.
 	 */
 	virtual int init(CSOUND *csound, OPDS *opds, MYFLT **outputs, MYFLT **inputs) = 0;
 	/**

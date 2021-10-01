@@ -1,15 +1,30 @@
 /**
- * # clang
+ * clang_opcodes.cpp - this file is part of clang-opcodes.
  *
- * Author: Michael Gogins
- * https://github.com/gogins
- * http://michaelgogins.tumblr.com
+ * Copyright (C) 2021 by Michael Gogins
  * 
- * This file is licensed by the GNU Lesser General Public License, version 2.1.
+ * clang-opcodes is free software; you can redistribute it
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ * 
+ * clang-opcodes is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with clang-opcodes; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA
  *
- * This file implements Csound opcodes that compiles C or C++ source code,
+ * Michael Gogins<br>
+ * https://github.com/gogins<br>
+ * http://michaelgogins.tumblr.com
+ *
+ * This file implements Csound opcodes that compile C or C++ source code,
  * embedded in tne Csound orchestra, for any purpose, and invokes the compiled 
- * The compiler is a simplified, embedded instance of the Clang/LLVM 
+ * code. The compiler is a simplified, embedded instance of the Clang/LLVM 
  * on-request compiler (ORC).
  *
  * This code is based on the "compiler_instance C Interpreter Example:"
@@ -285,7 +300,7 @@ public:
         DiagnosticsEngine diagnostics_engine(diagnostic_ids, &*diagnostic_options, diagnostic_client);
         // Infer Csound's runtime architecture.
         const std::string process_triple = llvm::sys::getProcessTriple();
-        if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_compile: triple: %s\n", process_triple.c_str());
+        if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_compile: target architecture: %s\n", process_triple.c_str());
         llvm::Triple triple(process_triple);
         // Use ELF on Windows-32 and MingW for now.
 #ifndef CLANG_INTERPRETER_COFF_FORMAT

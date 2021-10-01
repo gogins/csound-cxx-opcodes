@@ -1,11 +1,30 @@
 <CsoundSyntheizer>
 <CsLicense>
 
-This .csd file demonstrates and tests the new JIT compiler opcodes for Csound.
+clang_example.csd - demonstrates and tests the new JIT compiler opcodes for Csound.
 
 To facilitate understanding how this .csd file uses the Clang opcodes, all 
 diagnostics printed by the Clang opcodes are prefixed "#######" and all 
 diagnostics printed by C++ code in this .csd file are prefixed ">>>>>>>".
+
+Copyright (C) 2021 by Michael Gogins
+
+This file is part of clang-opcodes.
+
+clang-opcodes is free software; you can redistribute it
+and/or modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+clang-opcodes is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with clang-opcodes; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+02110-1301 USA
 
 </CsLicense>
 <CsOptions>
@@ -18,49 +37,30 @@ ksmps = 100
 nchnls = 2
 0dbfs = 4
 
-connect "FMWaterBell",       "outleft",  "MasterOutput",        "inleft"
-connect "FMWaterBell",       "outright", "MasterOutput",        "inright"
-connect "ClangGuitar",       "outleft",  "MasterOutput",        "inleft"
-connect "ClangGuitar",       "outright", "MasterOutput",        "inright"
+connect "Melody",           "outleft",  "MasterOutput",        "inleft"
+connect "Melody",           "outright", "MasterOutput",        "inright"
+connect "ClangGuitar",      "outleft",  "MasterOutput",        "inleft"
+connect "ClangGuitar",      "outright", "MasterOutput",        "inright"
 
 alwayson "MasterOutput"
 
-//////////////////////////////////////////////
-// Original by Steven Yi.
-//////////////////////////////////////////////
-gk_FMWaterBell_level chnexport "gk_FMWaterBell_level", 3 ; 0
-gi_FMWaterBell_attack chnexport "gi_FMWaterBell_attack", 3 ; 0.002
-gi_FMWaterBell_release chnexport "gi_FMWaterBell_release", 3 ; 0.01
-gi_FMWaterBell_sustain chnexport "gi_FMWaterBell_sustain", 3 ; 20
-gi_FMWaterBell_sustain_level chnexport "gi_FMWaterBell_sustain_level", 3 ; .1
-gk_FMWaterBell_index chnexport "gk_FMWaterBell_index", 3 ; .5
-gk_FMWaterBell_crossfade chnexport "gk_FMWaterBell_crossfade", 3 ; .5
-gk_FMWaterBell_vibrato_depth chnexport "gk_FMWaterBell_vibrato_depth", 3 ; 0.05
-gk_FMWaterBell_vibrato_rate chnexport "gk_FMWaterBell_vibrato_rate", 3 ; 6
-gk_FMWaterBell_midi_dynamic_range chnexport "gk_FMWaterBell_midi_dynamic_range", 3 ; 20
+gk_Melody_midi_dynamic_range chnexport "gk_Melody_midi_dynamic_range", 3 ; 127
+gk_Melody_level chnexport "gk_Melody_level", 3 ; 0
 
-gk_FMWaterBell_level init 0
-gi_FMWaterBell_attack init 0.002
-gi_FMWaterBell_release init 0.01
-gi_FMWaterBell_sustain init 20
-gi_FMWaterBell_sustain_level init .1
-gk_FMWaterBell_index init .5
-gk_FMWaterBell_crossfade init .5
-gk_FMWaterBell_vibrato_depth init 0.05
-gk_FMWaterBell_vibrato_rate init 6
-gk_FMWaterBell_midi_dynamic_range init 20
+gk_Melody_midi_dynamic_range init 20
+gk_Melody_level init 0
 
-gi_FMWaterBell_cosine ftgen 0, 0, 65537, 11, 1
-
-instr FMWaterBell
+gi_Melody_chebyshev ftgen 0, 0, 65537, -7, -1, 150, 0.1, 110, 0, 252, 0
+gi_Melody_sine ftgen 0, 0, 65537, 10, 1
+gi_Melody_cook3 ftgen 0, 0, 65537, 10, 1, .4, 0.2, 0.1, 0.1, .05
+instr Melody
+; Author: Jon Nelson
+; Adapted by: Michael Gogins
 i_instrument = p1
 i_time = p2
 i_duration = p3
-; One of the envelopes in this instrument should be releasing, and use this:
-i_sustain = 1000
-xtratim gi_FMWaterBell_attack + gi_FMWaterBell_release
 i_midi_key = p4
-i_midi_dynamic_range = i(gk_FMWaterBell_midi_dynamic_range)
+i_midi_dynamic_range = i(gk_Melody_midi_dynamic_range)
 i_midi_velocity = p5 * i_midi_dynamic_range / 127 + (63.6 - i_midi_dynamic_range / 2)
 k_space_front_to_back = p6
 k_space_left_to_right = p7
@@ -68,20 +68,58 @@ k_space_bottom_to_top = p8
 i_phase = p9
 i_frequency = cpsmidinn(i_midi_key)
 ; Adjust the following value until "overall amps" at the end of performance is about -6 dB.
-i_level_correction = 75
+i_level_correction = 67
 i_normalization = ampdb(-i_level_correction) / 2
-i_amplitude = ampdb(i_midi_velocity) * i_normalization * 1.6
-k_gain = ampdb(gk_FMWaterBell_level)
-a_signal fmbell	1, i_frequency, gk_FMWaterBell_index, gk_FMWaterBell_crossfade, gk_FMWaterBell_vibrato_depth, gk_FMWaterBell_vibrato_rate, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine, gi_FMWaterBell_cosine ;, gi_FMWaterBell_sustain
-;a_envelope linsegr 0, gi_FMWaterBell_attack, 1, i_sustain, gi_FMWaterBell_sustain_level, gi_FMWaterBell_release, 0
-a_envelope linsegr 0, gi_FMWaterBell_attack, 1, i_sustain, 1, gi_FMWaterBell_release, 0
-; ares transegr ia, idur, itype, ib [, idur2] [, itype] [, ic] ...
-; a_envelope transegr 0, gi_FMWaterBell_attack, 12, 1, i_sustain, 12, gi_FMWaterBell_sustain_level, gi_FMWaterBell_release, 12, 0
-a_signal = a_signal * i_amplitude * a_envelope * k_gain
+i_amplitude = ampdb(i_midi_velocity) * i_normalization
+k_gain = ampdb(gk_Melody_level)
+ip3 init 3.0
+iattack = 0.05
+isustain = p3
+irelease = 0.1
+xtratim iattack + irelease
+ip6 = gi_Melody_chebyshev
+i1 = i_frequency
+k100 randi 1,10
+k101 poscil 1, 5 + k100, gi_Melody_sine
+ak102 linseg 0, .5, 1, p3, 1
+k100 = i1 + (k101 * ak102)
+; Envelope for driving oscillator.
+; k1 linenr 0.5, ip3 * .3, ip3 * 2, 0.01
+k1 linseg 0, ip3 * .3, .5, ip3 * 2, 0.01, isustain, 0.01, irelease, 0
+; k2 line 1, p3, .5
+k2 linseg 1.0, ip3, .5, isustain, .5, irelease, 0
+k1 = k2 * k1
+; Amplitude envelope.
+k10 expseg 0.0001, iattack, 1.0, isustain, 0.8, irelease, .0001
+k10 = (k10 - .0001)
+; Power to partials.
+k20 linseg 1.485, iattack, 1.5, (isustain + irelease), 1.485
+; a1-3 are for cheby with p6=1-4
+a1 poscil k1, k100 - .025, gi_Melody_cook3
+; Tables a1 to fn13, others normalize,
+a2 tablei a1, ip6, 1, .5
+a3 balance a2, a1
+; Try other waveforms as well.
+a4 foscili 1, k100 + .04, 1, 2.005, k20, gi_Melody_sine
+a5 poscil 1, k100, gi_Melody_sine
+a6 = ((a3 * .1) + (a4 * .1) + (a5 * .8)) * k10
+a7 comb a6, .5, 1 / i1
+a8 = (a6 * .9) + (a7 * .1)
+asignal balance a8, a1
+a_declick linsegr 0, iattack, 1, isustain, 1, irelease, 0
+aleft, aright pan2 asignal * i_amplitude * a_declick * k_gain, k_space_left_to_right
 
-a_out_left, a_out_right pan2 a_signal, k_space_left_to_right
-outleta "outleft", a_out_left
-outleta "outright", a_out_right
+#ifdef USE_SPATIALIZATION
+a_signal = aleft + aright
+a_spatial_reverb_send init 0
+a_bsignal[] init 16
+a_bsignal, a_spatial_reverb_send Spatialize a_signal, k_space_front_to_back, k_space_left_to_right, k_space_bottom_to_top
+outletv "outbformat", a_bsignal
+outleta "out", a_spatial_reverb_send
+#else
+outleta "outleft", aleft
+outleta "outright", aright
+#endif
 prints "%-24.24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, p7, active(p1)
 endin
 
@@ -1742,15 +1780,19 @@ void rescale(Scaling &scaling, Score &score, int dimension, bool rescale_minimum
         update_bounds(scaling, note);
     }
     std::fprintf(stderr, "rescale: dimension: %2d rescale minimum: %d rescale range: %d actual minimum: %9.4f actual range: %9.4f target_minimum: %9.4f target_range: %9.4f\\n", dimension, rescale_minimum, rescale_range, scaling.minima[dimension], scaling.ranges[dimension], minimum, range);
+    double scaling_factor = range / scaling.ranges[dimension];
+    double move_to_origin = scaling.minima[dimension];
     for (auto &note : score) {
          // Move note to origin.
-        note[dimension] = (note[dimension] - scaling.minima[dimension]);            
+        double value = note[dimension];
+        value -= move_to_origin;
         // Rescale to fit target range.
         if (scaling.ranges[dimension]  != 0.) {
-            note[dimension] = note[dimension] * (range / scaling.ranges[dimension]);
+            value *= scaling_factor;
         }
         // Move back from origin to target.
-        note[dimension] = (note[dimension] + minimum);
+        value += minimum;
+        note[dimension] = value;
     }
 }
 
@@ -1786,7 +1828,7 @@ extern "C" int score_generator(CSOUND *csound) {
     std::vector<Transformation> transformations;
     transformations.resize(4);
     //                     i   t   d   k   v   p   T
-    transformations[0] << .5,  0,  0,  1,  0,  0,  1, /* i */
+    transformations[0] << .5,  0,  0,  .1, 0,  0,  1, /* i */
                            0, .5,  0,  0,  0,  0,  0, /* t */
                            0,  0, .5,  0,  0,  0,  0, /* d */
                            0,  0,  0, .5,  0,  0,  0, /* k */
@@ -1815,14 +1857,14 @@ extern "C" int score_generator(CSOUND *csound) {
                            0,  0, .5,  0,  0,  0,  0,
                            0,  0,  0, .45, 0,  0,  1,
                            0,  0,  0,  0, .5,  0,  0,
-                           0,  0,  0,  0,  0, .5,  0,
+                           0,  0,  .1, 0,  0, .5,  0,
                            0,  0,  0,  0,  0,  0,  1;
     Score score;
     Scaling scaling;
     multiple_copy_reducing_machine(note, transformations, score, 5);
     rescale(scaling, score, 0, true, true,  1.,    1.999);
-    rescale(scaling, score, 1, true, true,  1.,  240.0);
-    rescale(scaling, score, 2, true, true,  3,     3.);
+    rescale(scaling, score, 1, true, true,  1.,  120.0);
+    rescale(scaling, score, 2, true, true,  3,     6.);
     rescale(scaling, score, 3, true, true, 36.,   60.0);
     rescale(scaling, score, 4, true, true, 20.,   10.0);
     auto csound_score = to_csound_score(score);
