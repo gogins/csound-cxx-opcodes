@@ -4,6 +4,8 @@
  * Author: Michael Gogins
  * https://github.com/gogins
  * http://michaelgogins.tumblr.com
+ * 
+ * This file is licensed by the GNU Lesser General Public License, version 2.1.
  *
  * This file implements Csound opcodes that compiles C or C++ source code,
  * embedded in tne Csound orchestra, for any purpose, and invokes the compiled 
