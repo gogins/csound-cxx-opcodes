@@ -4,6 +4,12 @@
 #include <cstring>
 
 /**
+ * Author: Michael Gogins
+ * https://github.com/gogins
+ * http://michaelgogins.tumblr.com
+ * 
+ * This file is licensed by the GNU Lesser General Public License, version 2.1.
+ *
  * Defines the pure abstract interface implemented by Clang modules to be 
  * called by Csound using the `clang_invoke` opcode.
  */
