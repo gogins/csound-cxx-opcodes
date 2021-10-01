@@ -2,7 +2,7 @@
 
 The Clang opcodes embed the Clang/LLVM just-in-time C++ compiler into Csound. 
 This enables a Csound orchestra to include, compile, and run C++ code as part 
-of the Csound performance.
+of a Csound performance.
 
 The `clang_compile` opcode compiles C++ source, embedded in a Csound 
 orchestra, into an executable module, and executes it at init time.
@@ -17,15 +17,15 @@ The `clang_compile` opcode uses the [Clang library and LLVM](https://llvm.org/),
 and is based on the 
 ["Clang C Interpreter Example"](https://github.com/llvm/llvm-project/tree/main/clang/examples/clang-interpreter). 
 The `clang_invoke` opcode was inspired by the 
-[`faustgen`](https://csound.com/docs/manual/faustgen.html) opcodes.
+[Faust](https://csound.com/docs/manual/faustgen.html) opcodes.
 
 At this time, only one LLVM context and ORC compiler may exist in a single 
-Csound process. The results of running two Csound performances from a single 
-process, where both use the Clang opcodes, are undefined.
+Csound process. The results of running multiple Csound performances from a single 
+process, where each instance uses the Clang opcodes, are undefined.
 
 # clang_compile
 
-`clang_compile` - Compiles C++ source code into a module, and executes it at
+`clang_compile` - Compile C++ source code into a module, and execute it at
 Csound init time. 
 
 ## Description
@@ -87,7 +87,7 @@ defined in `S_compiler_options`.
 
 Dynamic link libraries on which the module depends may be used, whether system 
 libraries or user libraries, but must be specified as fully qualified 
-filepaths in `S_link_libraries`. The usual compiler option `-l` does not work 
+filepaths in `S_link_libraries`. The usual compiler option `-l` does _not_ work 
 in this context.
 
 __**PLEASE NOTE**__: Many shared libraries use the symbol `__dso_handle`, but 
@@ -102,8 +102,8 @@ a C program, with the following signature:
 ```
 extern "C" int(*)(CSOUND *csound);
 ```
-Once the `clang_compile` opcode has compiled the module, Csound will immediately 
-call the entry point function in that module. At that very time, the LLVM ORC 
+Once the `clang_compile` opcode has compiled the module, Csound immediately 
+calls the entry point function in that module. At that very time, the LLVM ORC 
 compiler will translate the IR code in the module to machine language, perform 
 relocations, resolve symbols, and otherwise load and link the module into the 
 running Csound process, just like any other C++ module.
@@ -152,9 +152,9 @@ for other purposes, e.g. simply as a way to call some function in the
 ```
 ## Initialization
 
-*S_clang_invokable* - A name unique in the Csound process for a factory 
-function `ClangInvokable *(*)` that creates and returns a new object that 
-implements the following pure abstract interface:
+*S_clang_invokable* - A name unique in the Csound performance for a factory 
+function `ClangInvokable *(*)` that creates and returns a new object 
+implementing the following pure abstract interface:
 ```
 /**
  * Defines the pure abstract interface implemented by Clang modules to be 
@@ -168,7 +168,7 @@ struct ClangInvokable {
 	 * the values returned from the `clang_invoke` opcode. Performs the 
 	 * same work as `iopadr` in a standard Csound opcode definition. The 
 	 * `opds` argument can be used to find many things about the invoking 
-     * opcde and its enclosing instrument.
+	 * opcode and its enclosing instrument.
 	 */
 	virtual int init(CSOUND *csound, OPDS *opds, MYFLT **outputs, MYFLT **inputs) = 0;
 	/**
@@ -203,30 +203,31 @@ ClangInvokable *create_score_generator();
    method is called once every kperiod during the lifetime of the 
    instrument.
 
-*m_output_1,...* - Any number, up to 40, of any type of Csound parameters, 
-i-rate or k-rate. These are actually the outputs that were provided by 
-Csound to `clang_invoke`.
-
-*m_input_i,...* - Any number of any type of Csound parameters, i-rate or 
-k-rate. These are actually the inputs that were provided by Csound to 
+*[m_input_i,...]* - 0 or more Csound parameters, of any type, size, shape, or 
+rate. These are actually the inputs provided by the Csound runtime to 
 `clang_invoke`.
 
+*[m_output_1,...]* - From 0 to 40 Csound parameters, of any type, size, 
+shape, or rate. These are actually the inputs provided by the Csound runtime 
+for `clang_invoke`.
+
 The *S_clang_invokeable* symbol is looked up in the LLVM execution session 
-of the global ORC compiler, and a new instance of the ClangInvokable class 
+of the global ORC compiler, and a new instance of the `ClangInvokable` class 
 is created. `clang_invoke` then calls the `ClangInvokable::init` method with 
 the input and output parameters, and any output values computed by the 
-`ClangInvokable` are returned in the *outputs* argument.
+`ClangInvokable` are returned in the elements of the *outputs* argument.
 
 Because of the variable numbers and types of arguments, it is virtually 
 impossible for `clang_invoke` to perform type checking. The user must 
-therefore take care to defie the correct numbers, types, and rates for these 
+therefore take care to defie the correct numbers, types, shapes, and rates for these 
 parameters and return values. 
 
 ## Performance
 
 If the `thread` parameter is 2 or 3, the `ClangInvokable::kontrol` method is 
 called once per kperiod during the lifetime of the opcode. Any output values 
-computed by the ClangInvokable must be returned in the *outputs* argument.
+computed by the ClangInvokable must be returned in elements of the *outputs* 
+argument.
 
 When the Csound instrument that has created the `clang_invoke` opcode is 
 turned off, Csound calls the `ClangInvokable::noteoff` method. At that 
