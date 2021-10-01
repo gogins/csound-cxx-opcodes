@@ -180,7 +180,7 @@ struct ClangInvokable {
 	virtual int kontrol(CSOUND *csound, MYFLT **outputs, MYFLT **inputs) = 0;
 	/**
 	 * Called by Csound when the Csound instrument that contains this 
-	 * instance of the ClangInvokable is turned off.
+	 * instance of the `ClangInvokable` is turned off.
 	 */
 	virtual int noteoff(CSOUND *csound) = 0;
 };
@@ -191,7 +191,7 @@ ClangInvokable *create_opcode_a();
 ClangInvokable *create_opcode_b();
 ClangInvokable *create_score_generator();
 ```
-*i_thread* - The "thread" on which this ClangInvokable will run:
+*i_thread* - The "thread" on which this `ClangInvokable` will run:
 
 -  1 = The `ClangInvokable::init` method is called, but not the 
    `ClangInvokable::kontrol` method.
@@ -226,7 +226,7 @@ parameters and return values.
 
 If the `thread` parameter is 2 or 3, the `ClangInvokable::kontrol` method is 
 called once per kperiod during the lifetime of the opcode. Any output values 
-computed by the ClangInvokable must be returned in elements of the *outputs* 
+computed by the `ClangInvokable` must be returned in elements of the *outputs* 
 argument.
 
 When the Csound instrument that has created the `clang_invoke` opcode is 
