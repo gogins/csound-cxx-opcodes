@@ -203,18 +203,18 @@ ClangInvokable *create_score_generator();
    method is called once every kperiod during the lifetime of the 
    instrument.
 
-*[m_input_i,...]* - 0 or more Csound parameters, of any type, size, shape, or 
-rate. These are actually the inputs provided by the Csound runtime to 
-`clang_invoke`.
+*[m_input_i,...]* - 0 or more Csound variables, of any type, size, shape, or 
+rate, as defined in [entry1.c](https://github.com/csound/csound/blob/develop/Engine/entry1.c). 
+These are actually the input arguments provided by the Csound runtime to `clang_invoke`.
 
-*[m_output_1,...]* - From 0 to 40 Csound parameters, of any type, size, 
-shape, or rate. These are actually the inputs provided by the Csound runtime 
+*[m_output_1,...]* - From 0 to 40 Csound variables, of any type, size, 
+shape, or rate. These are actually the output arguments provided by the Csound runtime 
 for `clang_invoke`.
 
 The *S_clang_invokeable* symbol is looked up in the LLVM execution session 
 of the global ORC compiler, and a new instance of the `ClangInvokable` class 
 is created. `clang_invoke` then calls the `ClangInvokable::init` method with 
-the input and output parameters, and any output values computed by the 
+the input and output arguments, and any output values computed by the 
 `ClangInvokable` are returned in the elements of the *outputs* argument.
 
 Because of the variable numbers and types of arguments, it is virtually 
