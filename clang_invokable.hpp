@@ -21,7 +21,7 @@ struct ClangInvokable {
 	 * the values returned from the `clang_invoke` opcode. Performs the 
 	 * same work as `iopadr` in a standard Csound opcode definition. The 
 	 * `opds` argument can be used to find many things about the invoking 
-     * opcde and its enclosing instrument.
+	 * opcode and its enclosing instrument.
 	 */
 	virtual int init(CSOUND *csound, OPDS *opds, MYFLT **outputs, MYFLT **inputs) = 0;
 	/**
