@@ -1,5 +1,9 @@
 # Clang Opcodes
 
+Michael Gogins<br>
+https://github.com/gogins<br>
+http://michaelgogins.tumblr.com
+
 The Clang opcodes embed the Clang/LLVM just-in-time C++ compiler into Csound. 
 This enables a Csound orchestra to include, compile, and run C++ code as part 
 of a Csound performance.
@@ -13,15 +17,15 @@ Commonly, this is used to implement new Csound opcodes directly in C++ from
 the Csound orchestra. It is also used to generate scores or control channel 
 values at the beginning of, or during, the performance.
 
-The `clang_compile` opcode uses the [Clang library and LLVM](https://llvm.org/), 
-and is based on the 
+The `clang_compile` opcode uses the 
+[Clang and LLVM infrastructure](https://llvm.org/), and is based on the 
 ["Clang C Interpreter Example"](https://github.com/llvm/llvm-project/tree/main/clang/examples/clang-interpreter). 
-The `clang_invoke` opcode was inspired by the 
-[Faust](https://csound.com/docs/manual/faustgen.html) opcodes.
+The `clang_invoke` opcode was inspired by the [Faust](https://csound.com/docs/manual/faustgen.html) 
+opcodes.
 
 At this time, only one LLVM context and ORC compiler may exist in a single 
-Csound process. The results of running multiple Csound performances from a single 
-process, where each instance uses the Clang opcodes, are undefined.
+Csound process. The results of running multiple Csound performances from a 
+single process, where each instance uses the Clang opcodes, are undefined.
 
 # clang_compile
 
@@ -47,10 +51,10 @@ i_result clang_compile S_entry_point, S_source_code, S_compiler_options [, S_lin
 
 *S_entry_point* - A valid C identifier, unique in the Csound performance, 
 for an entry point function that must be defined in the module. This function 
-must have the signature `extern "C" int (*)(CSOUND *csound)`. This function has 
-full access to the running instance of Csound via the Csound API members of the 
-CSOUND structure, as well as to all symbols in other LLVM modules, and all 
-exported symbols in all loaded dynamic link libraries.
+must have the signature `extern "C" int (*)(CSOUND *csound)`. This function 
+has full access to the running instance of Csound via the Csound API members 
+of the CSOUND structure, as well as to all symbols in other LLVM modules, and 
+all exported symbols in all loaded dynamic link libraries.
 
 *S_source_code* - C++ source code. Can be a multi-line string literal 
 enclosed in `{{` and `}}`. Please note, this string is a "heredoc" and, thus, 
@@ -77,8 +81,8 @@ non-0 if there is an error. Clang and LLVM diagnostics are printed to stderr.
 
 The module is compiled and executed at Csound's initialization time, which 
 comes after `csoundStart` has been called. If the compilation is done in the 
-orchestra header, i.e. in `instr 0`, the execution occurs during Csound's init 
-pass for `instr 0`. If the compilation is done from a regular Csound 
+orchestra header, i.e. in `instr 0`, the execution occurs during Csound's 
+init pass for `instr 0`. If the compilation is done from a regular Csound 
 instrument, the execution occurs during Csound's init pass for that particular 
 instrument instance.
 
@@ -90,7 +94,7 @@ libraries or user libraries, but must be specified as fully qualified
 filepaths in `S_link_libraries`. The usual compiler option `-l` does _not_ work 
 in this context.
 
-__**PLEASE NOTE**__: Many shared libraries use the symbol `__dso_handle`, but 
+__**PLEASE NOTE**__: Some shared libraries use the symbol `__dso_handle`, but 
 this is not defined in the ORC compiler's startup code. To work around this, 
 manually define it in your C++ code like this:
 ```
@@ -138,9 +142,8 @@ working, and no more.
 
 ## Description
 
-Creates an instance of a `ClangInvokable` that has been defined 
-previously using `clang_compile`, and invokes that instance at i-time, k-time, 
-or both. 
+Creates an instance of a `ClangInvokable` that has been defined previously 
+using `clang_compile`, and invokes that instance at i-time, k-time, or both. 
 
 This can be used to implement any type of Csound opcode. It can also be used 
 for other purposes, e.g. simply as a way to call some function in the 
@@ -157,7 +160,7 @@ function `ClangInvokable *(*)` that creates and returns a new object
 implementing the following pure abstract interface:
 ```
 /**
- * Defines the pure abstract interface implemented by Clang modules to be 
+ * Defines the pure abstract interface, implemented by Clang modules, to be 
  * called by Csound using the `clang_invoke` opcode.
  */
 struct ClangInvokable {
@@ -168,7 +171,7 @@ struct ClangInvokable {
 	 * the values returned from the `clang_invoke` opcode. Performs the 
 	 * same work as `iopadr` in a standard Csound opcode definition. The 
 	 * `opds` argument can be used to find many things about the invoking 
-	 * opcode and its enclosing instrument.
+	 * opcode, its enclosing instrument, and the running instance of Csound.
 	 */
 	virtual int init(CSOUND *csound, OPDS *opds, MYFLT **outputs, MYFLT **inputs) = 0;
 	/**
@@ -185,12 +188,6 @@ struct ClangInvokable {
 	virtual int noteoff(CSOUND *csound) = 0;
 };
 ```
-It is advisable for such factory functions to follow a naming pattern such as: 
-```
-ClangInvokable *create_opcode_a();
-ClangInvokable *create_opcode_b();
-ClangInvokable *create_score_generator();
-```
 *i_thread* - The "thread" on which this `ClangInvokable` will run:
 
 -  1 = The `ClangInvokable::init` method is called, but not the 
@@ -200,7 +197,7 @@ ClangInvokable *create_score_generator();
    kperiod during the lifetime of the instrument.
 -  3 = The `ClangInvokable::init` method is called once at the 
    init pass for the instrument, and the `ClangInvokable::kontrol` 
-   method is called once every kperiod during the lifetime of the 
+   method is then called once every kperiod during the lifetime of the 
    instrument.
 
 *[m_input_i,...]* - 0 or more Csound variables, of any type, size, shape, or 

@@ -1549,7 +1549,7 @@ extern "C" {
         InvokableGuitar *InvokableGuitarPtr = nullptr;
         if (diagnostics_enabled) std::fprintf(stderr, "This is \\"guitar_factory\\".\\n");
         InvokableGuitarPtr = new InvokableGuitar;
-        if (diagnostics_enabled) std::fprintf(stderr, "\\"guitar_factory\\" newed %p.\\n", InvokableGuitarPtr);
+        if (diagnostics_enabled) std::fprintf(stderr, "\\"guitar_factory\\" created %p.\\n", InvokableGuitarPtr);
         return InvokableGuitarPtr;
     }
 };
@@ -1564,10 +1564,10 @@ gk_ClangGuitar_scale chnexport "gk_ClangGuitar_scale", 3
 gk_ClangGuitar_pluck_position chnexport "gk_ClangGuitar_pluck_position", 3
 gk_ClangGuitar_gain chnexport "gk_ClangGuitar_gain", 3
 gk_ClangGuitar_otuGain chnexport "gk_ClangGuitar_outGain", 3
-gk_ClangGuitar_level init 0
-gk_ClangGuitar_shape init .24
-gk_ClangGuitar_scale init 0
-gk_ClangGuitar_pluck_position init .75
+gk_ClangGuitar_level init 6
+gk_ClangGuitar_shape init .724
+gk_ClangGuitar_scale init .02
+gk_ClangGuitar_pluck_position init .65
 gk_ClangGuitar_gain init .75
 gk_ClangGuitar_outGain init .5
 gk_FaustModularbody_midi_dynamic_range init 20
@@ -1694,7 +1694,7 @@ i_result clang_compile "reverb_main", S_reverb_code, "-g -O2 -std=c++14 -I/usr/l
 gk_MasterOutput_level chnexport "gk_MasterOutput_level", 3
 gk_MasterOutput_level init 0
 gk_MasterOutput_reverb_T60 chnexport "gk_MasterOutput_reverb_T60", 3
-gk_MasterOutput_reverb_T60 init 1.5
+gk_MasterOutput_reverb_T60 init .89
 instr MasterOutput
 S_MasterOutput_filename init ""
 aleft_in inleta "inleft"
@@ -1776,6 +1776,8 @@ void multiple_copy_reducing_machine(const Note &note, const std::vector<Transfor
 }
 
 void rescale(Scaling &scaling, Score &score, int dimension, bool rescale_minimum, bool rescale_range, double minimum, double range) {
+    scaling.minima = score.front();
+    scaling.maxima = score.front();
     for (const auto &note : score) {
         update_bounds(scaling, note);
     }
@@ -1861,11 +1863,11 @@ extern "C" int score_generator(CSOUND *csound) {
                            0,  0,  0,  0,  0,  0,  1;
     Score score;
     Scaling scaling;
-    multiple_copy_reducing_machine(note, transformations, score, 5);
+    multiple_copy_reducing_machine(note, transformations, score, 6);
     rescale(scaling, score, 0, true, true,  1.,    1.999);
     rescale(scaling, score, 1, true, true,  1.,  120.0);
     rescale(scaling, score, 2, true, true,  3,     6.);
-    rescale(scaling, score, 3, true, true, 36.,   60.0);
+    rescale(scaling, score, 3, true, true, 24.,   72.0);
     rescale(scaling, score, 4, true, true, 20.,   10.0);
     auto csound_score = to_csound_score(score);
     csound->InputMessage(csound, csound_score.c_str());
@@ -1878,7 +1880,7 @@ i_result clang_compile "score_generator", S_score_generator_code, "-g -O2 -std=c
 
 </CsInstruments>
 <CsScore>
-f 0 245
+f 0 125
 </CsScore>
 </CsoundSynthesizer>
 clang_compile
