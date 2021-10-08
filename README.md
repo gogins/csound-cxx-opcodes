@@ -1,4 +1,5 @@
 # Clang Opcodes
+![GitHub All Releases (total)](https://img.shields.io/github/downloads/gogins/clang-opcodes/total.svg)<br>
 
 Michael Gogins<br>
 https://github.com/gogins<br>
