@@ -127,6 +127,11 @@ code into classes that can perform the work of Csound opcodes. This is
 done by implementing the `ClangInvokable` interface. See `clang_invoke` for how 
 this works and how to use it.
 
+An algorithm written in C++ for the Clang opcodes should run about 3 percent 
+slower than the same code running as a statically compiled plugin opcode, and 
+2 to 3 times faster than the same algorithm implemented in Csound orchestra 
+code.
+
 ## Example
 
 The `clang_hello.csd` file uses the `clang_compile` opcode to demonstrate and 
