@@ -67,8 +67,30 @@ class ClangInvokableBase : public ClangInvokable {
             opds = opds_;
             return result;
         }
-        int kontrol(CSOUND *csound_, MYFLT **outputs, MYFLT **inputs) override {
+        /**
+         * Computes one sample of one frame of output audio.
+         * The `kontrol` method then calls this as appropriate for 
+         * --sample-accurate rendering. The implemention of this method must 
+         * be compatible with Csound's inputs to `clang_invoke`.
+         */
+        virtual MYFLT tick(MYFLT **inputs) {
+            MYFLT value = 0;
+            return value;
+        }
+         int kontrol(CSOUND *csound_, MYFLT **outputs, MYFLT **inputs) override {
             int result = OK;
+            int frame_index = 0;
+            MYFLT input = 0.;
+            for( ; frame_index < kperiodOffset(); ++frame_index) {
+                outputs[0][frame_index] = 0;
+            }
+            for( ; frame_index < kperiodEnd(); ++frame_index) {
+                MYFLT sample = tick(inputs);
+                outputs[0][frame_index] = sample;
+            }
+            for( ; frame_index < ksmps(); ++frame_index) {
+                outputs[0][frame_index] = 0;
+            }
             return result;
         }
         int noteoff(CSOUND *csound) override 
@@ -130,6 +152,6 @@ class ClangInvokableBase : public ClangInvokable {
             }
         }
     protected:
-        OPDS *opds = nullptr;
         CSOUND *csound = nullptr;
+        OPDS *opds = nullptr;
 };

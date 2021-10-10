@@ -82,12 +82,14 @@ extern "C" {
 
 }}
 
-gi_result clang_compile "csound_main", gS_source_code, "-v -std=c++14 -I/usr/local/include/csound -I.", "/usr/lib/gcc/x86_64-linux-gnu/9/libstdc++.so /usr/lib/gcc/x86_64-linux-gnu/9/libgcc_s.so /usr/lib/x86_64-linux-gnu/libm.so /usr/lib/x86_64-linux-gnu/libpthread.so"
+gi_result clang_compile "csound_main", gS_source_code, "-v -std=c++14 -I/usr/local/include/csound -I.", "/usr/lib/gcc/x86_64-linux-gnu/9/libstdc++.so"
 
 instr 1
+prints "******* instr 1...\n"
 prints "******* Trying to invoke Hello...\n"
 S_message, i_number clang_invoke "hello_factory", 1, 2
 prints "******* clang_invoke returned: \"%s\" and %d\n", S_message, i_number
+prints "******* instr 1 finished.\n"
 endin
 
 </CsInstruments>

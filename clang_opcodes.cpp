@@ -102,12 +102,15 @@ std::string GetExecutablePath(const char *argv_0, void *main_address)
     return llvm::sys::fs::getMainExecutable(argv_0, main_address);
 }
 
+/**
+ * Generates unique "dylib" names.
+ */
 std::string dylib_name() {
     static int dylib_count = 0;
     dylib_count++;
-    char dylib_name_[0x100];
-    std::snprintf(dylib_name_, 0x100, "<main-%d>", dylib_count);
-    return dylib_name_;
+    char buffer[0x100];
+    std::snprintf(buffer, 0x100, "<main-%d>", dylib_count);
+    return buffer;
 }
 
 namespace llvm
@@ -124,8 +127,8 @@ private:
     std::string name = dylib_name();
     JITDylib &main_jit_dylib{execution_session.createBareJITDylib(name)};
     RTDyldObjectLinkingLayer object_linking_layer{execution_session, create_memory_manager};
-    // llvm::orc::SimpleCompiler is the simplest JIT compiler in
-    // the orc namespace, but it does seem to suit our use case.
+    // llvm::orc::SimpleCompiler is the simplest JIT compiler in the orc 
+    // namespace, but it does seem to suit our use case.
     IRCompileLayer intermediate_representation_compiler_layer{execution_session, object_linking_layer, std::make_unique<SimpleCompiler>(*target_machine)};
     static std::unique_ptr<SectionMemoryManager> create_memory_manager() {
         return std::make_unique<SectionMemoryManager>();
@@ -137,14 +140,16 @@ private:
     {
         llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
         main_jit_dylib.addGenerator(std::move(process_symbols_generator));
-        if (clang_diagnostics_enabled()) std::fprintf(stderr, "####### clang_compile: main_jit_dylib: name: %s\n", main_jit_dylib.getName().c_str());
+        if (clang_diagnostics_enabled()) std::fprintf(stderr, "####### JITCompiler::JITCompiler: main_jit_dylib: name: %s\n", main_jit_dylib.getName().c_str());
     }
 public:
     ~JITCompiler()
     {
-        if (clang_diagnostics_enabled()) std::fprintf(stderr, "####### clang_compile: deleting JITCompiler %p and ending execution session.\n", this);
+        if (clang_diagnostics_enabled()) std::fprintf(stderr, "####### JITCompiler::~JITCompiler: deleting JITCompiler %p.\n", this);
         if(auto error = execution_session.endSession()) {
             execution_session.reportError(std::move(error));
+        } else {
+            if (clang_diagnostics_enabled()) std::fprintf(stderr, "####### JITCompiler::~JITCompiler: execution session has ended.\n");
         }
     }
     static Expected<std::unique_ptr<JITCompiler>> Create()
@@ -189,8 +194,8 @@ public:
 } // end namespace llvm
 
 /**
- * This refers to the singleton JIT compiler that can link modules and
- * be called from different opcodes.
+ * This refers to the single JIT compiler in this Csound performance that can 
+ * link modules and be called from different opcodes.
  */
 static std::shared_ptr<llvm::orc::JITCompiler> jit_compiler;
 
@@ -218,29 +223,6 @@ static void tokenize(std::string const &string_, const char delimiter, std::vect
  */
 extern "C" {
     typedef int (*csound_main_t)(CSOUND *csound);
-};
-
-/**
- * Thread-safe facility for storing and removing compilers used in different 
- * Csound performances.
- */
-struct clang_compilers_for_csounds_t
-{
-    std::mutex mutex_;
-    std::multimap<CSOUND *, std::shared_ptr<llvm::Module> > clang_compilers_for_csounds_;
-    void add(CSOUND *csound, std::shared_ptr<llvm::Module> module) {
-        std::lock_guard<std::mutex> guard(mutex_);
-        clang_compilers_for_csounds_.insert({csound, module});
-    }
-    void del(CSOUND *csound) {
-        std::lock_guard<std::mutex> guard(mutex_);
-        clang_compilers_for_csounds_.erase(csound);
-    }
-};
-
-static clang_compilers_for_csounds_t &clang_compilers_for_csounds() {
-    static clang_compilers_for_csounds_t clang_compilers_for_csounds_;
-    return clang_compilers_for_csounds_;
 };
 
 class ClangCompile : public csound::OpcodeBase<ClangCompile>
@@ -271,9 +253,8 @@ public:
             }
             args.push_back(tokens[i].c_str());
         }
-        //std::fprintf(stderr, "ClangCompile::init: line %d\n", __LINE__);
         auto entry_point = csound->strarg2name(csound, (char *)0, S_entry_point->data, (char *)"", 1);
-        if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_compile: entry_point: %s\n", entry_point);
+        if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_compile::init: entry_point: %s\n", entry_point);
         // Create a temporary file containing the source code.
         auto source_code = csound->strarg2name(csound, (char *)0, S_source_code->data, (char *)"", 1);
         const char *temp_directory = std::getenv("TMPDIR");
@@ -293,14 +274,14 @@ public:
         // the process; C++ doesn't allow taking the address of ::main.
         void *main_address = (void*)(intptr_t) GetExecutablePath;
         std::string executable_filepath = GetExecutablePath(args[0], main_address);
-        if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_compile: executable_filepath: %s\n", executable_filepath.c_str());
+        if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_compile::init: executable_filepath: %s\n", executable_filepath.c_str());
         IntrusiveRefCntPtr<DiagnosticOptions> diagnostic_options = new DiagnosticOptions();
         TextDiagnosticPrinter *diagnostic_client = new TextDiagnosticPrinter(llvm::errs(), &*diagnostic_options);
         IntrusiveRefCntPtr<DiagnosticIDs> diagnostic_ids(new DiagnosticIDs());
         DiagnosticsEngine diagnostics_engine(diagnostic_ids, &*diagnostic_options, diagnostic_client);
         // Infer Csound's runtime architecture.
         const std::string process_triple = llvm::sys::getProcessTriple();
-        if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_compile: target architecture: %s\n", process_triple.c_str());
+        if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_compile::init: target architecture: %s\n", process_triple.c_str());
         llvm::Triple triple(process_triple);
         // Use ELF on Windows-32 and MingW for now.
 #ifndef CLANG_INTERPRETER_COFF_FORMAT
@@ -315,11 +296,7 @@ public:
         // FIXME: This is a hack to try to force the driver to do something we can
         // recognize. We need to extend the driver library to support this use model
         // (basically, exactly one input, and the operation mode is hard wired).
-        ///SmallVector<const char *, 16> args(argv, argv + argc);
         args.push_back("-fsyntax-only");
-        //~ for (auto arg : args) {
-            //~ if (clang_diagnostics_enabled()) csound->Message(csound, "arg: %s\n", arg);
-        //~ }
         // TODO: Change this to in-memory?
         std::unique_ptr<Compilation> compilation(clang_driver.BuildCompilation(args));
         if(!compilation) {
@@ -372,10 +349,10 @@ public:
         llvm::InitializeNativeTargetAsmPrinter();
         int result = 255;
         std::unique_ptr<llvm::LLVMContext> llvm_context(emit_llvm_action->takeLLVMContext());
+        if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_compile::init: llvm_context: %p\n", llvm_context.get());
         std::unique_ptr<llvm::Module> module = emit_llvm_action->takeModule();
-        //std::fprintf(stderr, "ClangCompile::init: line %d\n", __LINE__);
         if(module) {
-            // Load and link all dynamic link libraries required.
+            // Load and link all required dynamic link libraries.
             auto link_libraries = csound->strarg2name(csound, (char *)0, S_link_libraries->data, (char *)"", 1);
             std::vector<std::string> link_libraries_list;
             tokenize(link_libraries, ' ', link_libraries_list);
@@ -385,21 +362,16 @@ public:
             // The JIT compiler is global for the Csound performance and for all opcodes.
             if (!jit_compiler) {
                 jit_compiler = exit_on_error(llvm::orc::JITCompiler::Create());
-            }
+                 if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_compile::init: created JIT compiler: %p:\n", jit_compiler.get());
+           }
             exit_on_error(jit_compiler->addModule(llvm::orc::ThreadSafeModule(std::move(module), std::move(llvm_context))));
             // It seems the actual compilation to machine language happens
             // just when a symbol is accessed for the first time.
             auto csound_main = (int (*)(CSOUND *)) exit_on_error(jit_compiler->getSymbolAddress(entry_point));
-            if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_compile: invoking \"%s\" at %p:\n", entry_point, csound_main);
+            if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_compile::init: calling \"%s\" at %p:\n", entry_point, csound_main);
             result = csound_main(csound);
-            if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_compile: \"%s\" returned: %d\n", entry_point, result);
-            //~ // On success, store the compiled module until Csound exits.
-            //~ std::shared_ptr<llvm::Module> object_module = std::move(module);
-            //~ if (object_module) {
-            //~ clang_compilers_for_csounds().add(csound, object_module);
-            //~ }
+            if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_compile::init: \"%s\" returned: %d\n", entry_point, result);
         }
-        //std::fprintf(stderr, "ClangCompile::init ended at: line %d\n", __LINE__);
         return OK;
     };
 };
@@ -418,21 +390,25 @@ public:
     MYFLT *outputs[40];
     // INPUTS
     STRINGDAT *S_invokable_factory;
-/* thread vals, where isub=1, ksub=2:
-   0 =     1  OR   2  (B out only)
-   1 =     1
-   2 =             2
-   3 =     1  AND  2
- */
-
+    /* thread vals, where isub=1, ksub=2:
+       0 =     1  OR   2  (B out only) NOT USED
+       1 =     1
+       2 =             2
+       3 =     1  AND  2
+    */
     MYFLT *i_thread;
     MYFLT *inputs[VARGMAX];
     // STATE
-    int thread = (int) *i_thread;
+    int thread;
     std::shared_ptr<ClangInvokable> clang_invokable;
     int init(CSOUND *csound)
     {
         int result = OK;
+        thread = *i_thread;
+        if (!((thread == 1) || (thread == 2) || (thread == 3))) {
+            csound->Message(csound, "####### clang_invoke::init: Error: invalid thread (%d).\n", thread);
+            return NOTOK;
+        }
         // Look up factory.
         auto invokable_factory_name = csound->strarg2name(csound, (char *)0, S_invokable_factory->data, (char *)"", 1);
         if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_invoke::init: factory name: \"%s\"\n", invokable_factory_name);
@@ -499,10 +475,9 @@ extern "C" {
 
     PUBLIC int csoundModuleDestroy_clang_opcodes(CSOUND *csound)
     {
-        //~clang_compilers_for_csounds().del(csound);
         jit_compiler.reset();
         if (clang_diagnostics_enabled()) {
-            std::fprintf(stderr, "####### csoundModuleDestroy: released jit_compiler: now %p\n", jit_compiler.get());
+            std::fprintf(stderr, "####### csoundModuleDestroy: reset jit_compiler: now %p\n", jit_compiler.get());
         }
         llvm::llvm_shutdown();
         return 0;
