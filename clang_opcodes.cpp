@@ -450,6 +450,9 @@ extern "C" {
 
     PUBLIC int csoundModuleInit_clang_opcodes(CSOUND *csound)
     {
+        if (true) {
+            std::fprintf(stderr, "####### csoundModuleInit_clang_opcodes...\n");
+        }
         int status = csound->AppendOpcode(csound,
                                           (char *)"clang_compile",
                                           sizeof(ClangCompile),
@@ -477,7 +480,7 @@ extern "C" {
     {
         jit_compiler.reset();
         if (clang_diagnostics_enabled()) {
-            std::fprintf(stderr, "####### csoundModuleDestroy: reset jit_compiler: now %p\n", jit_compiler.get());
+            std::fprintf(stderr, "####### csoundModuleDestroy_clang_opcodes: reset jit_compiler: now %p\n", jit_compiler.get());
         }
         llvm::llvm_shutdown();
         return 0;

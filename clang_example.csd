@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
 
 </CsLicense>
 <CsOptions>
--m0 -d --opcode-lib="./clang_opcodes.so" -odac
+-m0 -d 
 </CsOptions>
 <CsInstruments>
 
@@ -36,6 +36,15 @@ sr = 48000
 ksmps = 100
 nchnls = 2
 0dbfs = 4
+
+ires system_i 1,{{     ps
+            date
+            # cd ~/Desktop
+            pwd
+            ls -l
+            whois csounds.com
+        }}, 1
+print ires
 
 connect "Melody",           "outleft",  "MasterOutput",        "inleft"
 connect "Melody",           "outright", "MasterOutput",        "inright"
@@ -396,7 +405,7 @@ class mydsp : public dsp {
         m->declare("delays.lib/name", "Faust Delay Library");
         m->declare("delays.lib/version", "0.1");
         m->declare("description", "String instrument with a modular body");
-        m->declare("envelopes.lib/ar:author", "Yann Orlarey, Stéphane Letz");
+        m->declare("envelopes.lib/ar:author", "Yann Orlarey, Stephane Letz");
         m->declare("envelopes.lib/author", "GRAME");
         m->declare("envelopes.lib/copyright", "GRAME");
         m->declare("envelopes.lib/license", "LGPL with exception");
@@ -1556,7 +1565,7 @@ extern "C" {
 
 }}
 
-i_result clang_compile "guitar_main", S_guitar_source_code, "-g -O2 -std=c++14 -I/usr/local/include/csound -I. -stdlib=libstdc++", "/usr/lib/gcc/x86_64-linux-gnu/9/libstdc++.so /usr/lib/gcc/x86_64-linux-gnu/9/libgcc_s.so /usr/lib/x86_64-linux-gnu/libm.so /usr/lib/x86_64-linux-gnu/libpthread.so"
+i_result clang_compile "guitar_main", S_guitar_source_code, "-g -O2 -std=c++14 -Wno-invalid-source-encoding -I/usr/local/include/csound -I. -stdlib=libstdc++", "/usr/lib/gcc/x86_64-linux-gnu/9/libstdc++.so /usr/lib/gcc/x86_64-linux-gnu/9/libgcc_s.so /usr/lib/x86_64-linux-gnu/libm.so /usr/lib/x86_64-linux-gnu/libpthread.so"
 
 gk_ClangGuitar_level chnexport "gk_ClangGuitar_level", 3
 gk_ClangGuitar_shape chnexport "gk_ClangGuitar_shape", 3
@@ -1883,4 +1892,22 @@ i_result clang_compile "score_generator", S_score_generator_code, "-g -O2 -std=c
 f 0 125
 </CsScore>
 </CsoundSynthesizer>
+
 clang_compile
+<bsbPanel>
+ <label>Widgets</label>
+ <objectName/>
+ <x>100</x>
+ <y>100</y>
+ <width>320</width>
+ <height>240</height>
+ <visible>true</visible>
+ <uuid/>
+ <bgcolor mode="nobackground">
+  <r>255</r>
+  <g>255</g>
+  <b>255</b>
+ </bgcolor>
+</bsbPanel>
+<bsbPresets>
+</bsbPresets>
