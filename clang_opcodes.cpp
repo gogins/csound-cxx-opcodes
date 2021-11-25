@@ -478,18 +478,18 @@ extern "C" {
 
     PUBLIC int csoundModuleDestroy_clang_opcodes(CSOUND *csound)
     {
+        std::fprintf(stderr, "####### csoundModuleDestroy_clang_opcodes: reset jit_compiler: currently %p\n", jit_compiler.get());
+        //~ delete jit_compiler.get();
         jit_compiler.reset();
-        if (clang_diagnostics_enabled()) {
-            std::fprintf(stderr, "####### csoundModuleDestroy_clang_opcodes: reset jit_compiler: now %p\n", jit_compiler.get());
-        }
         llvm::llvm_shutdown();
-        return 0;
+        std::fprintf(stderr, "####### csoundModuleDestroy_clang_opcodes: reset jit_compiler: reset to %p\n", jit_compiler.get());
+        return OK;
     }
 
 #ifndef INIT_STATIC_MODULES
     PUBLIC int csoundModuleCreate(CSOUND *csound)
     {
-        return 0;
+        return OK;
     }
 
     PUBLIC int csoundModuleInit(CSOUND *csound)
