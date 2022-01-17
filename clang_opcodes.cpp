@@ -68,8 +68,16 @@
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Target/TargetMachine.h"
-
+#if defined(__APPLE__)
+#include <csdl.h>
+#include <csound.h>
+#include <OpcodeBase.hpp>
+#include <unistd.h>
+#else
+#include <csound/csdl.h>
+#include <csound/csound.h>
 #include <csound/OpcodeBase.hpp>
+#endif
 #include <cstdio>
 #include <cstdlib>
 #include <map>
