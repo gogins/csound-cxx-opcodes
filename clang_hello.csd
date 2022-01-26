@@ -37,8 +37,8 @@ prints "******* I'm about to try compiling a simple test C++ module....\n"
 
 gS_source_code = {{
 
-#include "clang_invokable.hpp"
-#include <csound/csdl.h>
+#include <clang_invokable.hpp>
+#include <csdl.h>
 #include <cstdio>
 #include <iostream>
 #include <string>
@@ -82,7 +82,11 @@ extern "C" {
 
 }}
 
-gi_result clang_compile "csound_main", gS_source_code, "-v -std=c++14 -I/usr/local/include/csound -I.", "/usr/lib/gcc/x86_64-linux-gnu/9/libstdc++.so /usr/lib/gcc/x86_64-linux-gnu/9/libgcc_s.so /usr/lib/x86_64-linux-gnu/libm.so /usr/lib/x86_64-linux-gnu/libpthread.so"
+// For Darwin:
+gi_result clang_compile "csound_main", gS_source_code, "-v -std=c++14 -I/opt/homebrew/Cellar/llvm/13.0.0_2/lib/clang/13.0.0/include/ -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers/", "-lstdc++ -m"
+
+// For Linux:
+// gi_result clang_compile "csound_main", gS_source_code, "-v -std=c++14 -I/usr/local/include/csound -I.", "/usr/lib/gcc/x86_64-linux-gnu/9/libstdc++.so /usr/lib/gcc/x86_64-linux-gnu/9/libgcc_s.so /usr/lib/x86_64-linux-gnu/libm.so /usr/lib/x86_64-linux-gnu/libpthread.so"
 
 instr 1
 prints "******* Trying to invoke Hello...\n"

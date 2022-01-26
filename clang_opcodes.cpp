@@ -325,12 +325,13 @@ public:
         // (basically, exactly one input, and the operation mode is hard wired).
         ///SmallVector<const char *, 16> args(argv, argv + argc);
         args.push_back("-fsyntax-only");
-        //~ for (auto arg : args) {
-            //~ if (clang_diagnostics_enabled()) csound->Message(csound, "arg: %s\n", arg);
-        //~ }
+        for (auto arg : args) {
+            if (clang_diagnostics_enabled()) csound->Message(csound, "arg: %s\n", arg);
+        }
         // TODO: Change this to in-memory?
         std::unique_ptr<Compilation> compilation(clang_driver.BuildCompilation(args));
         if(!compilation) {
+            if (clang_diagnostics_enabled()) csound->Message(csound, "Error: No compilation.\n");
             return 0;
         }
         // FIXME: This is copied from ASTUnit.cpp; simplify and eliminate.
