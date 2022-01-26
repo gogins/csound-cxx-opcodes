@@ -343,11 +343,13 @@ public:
             llvm::raw_svector_ostream OS(message);
             compilation_jobs.Print(OS, "; ", true);
             diagnostics_engine.Report(diag::err_fe_expected_compiler_job) << OS.str();
+            if (clang_diagnostics_enabled()) csound->Message(csound, "Error: Should have been exactly one compilation job.\n");
             return 1;
         }
         const driver::Command &command = cast<driver::Command>(*compilation_jobs.begin());
         if(llvm::StringRef(command.getCreator().getName()) != "clang") {
             diagnostics_engine.Report(diag::err_fe_expected_clang_command);
+            if (clang_diagnostics_enabled()) csound->Message(csound, "Error: This should be a clang command.\n");
             return 1;
         }
         // Initialize a compiler invocation object from the clang (-cc1) arguments.
@@ -371,10 +373,12 @@ public:
         }
         // Infer the builtin include path if unspecified.
         if(compiler_instance.getHeaderSearchOpts().UseBuiltinIncludes && compiler_instance.getHeaderSearchOpts().ResourceDir.empty()) {
+            if (clang_diagnostics_enabled()) csound->Message(csound, "Warning: Inferrring builtin inclde path.\n");
             compiler_instance.getHeaderSearchOpts().ResourceDir = CompilerInvocation::GetResourcesPath(args[0], main_address);
         }
         std::unique_ptr<CodeGenAction> emit_llvm_action(new EmitLLVMOnlyAction());
         if(!compiler_instance.ExecuteAction(*emit_llvm_action)) {
+            if (clang_diagnostics_enabled()) csound->Message(csound, "Error: LLVM action was not emitted.\n");
             return 1;
         }
         llvm::InitializeNativeTarget();
