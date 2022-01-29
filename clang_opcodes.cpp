@@ -300,7 +300,9 @@ public:
         // csound_main entry point. This just needs to be some symbol in
         // the process; C++ doesn't allow taking the address of ::main.
         void *main_address = (void*)(intptr_t) GetExecutablePath;
+        // TODO: Try swapping this for the filepath of the clang@13 program.
         std::string executable_filepath = GetExecutablePath(args[0], main_address);
+        // executable_filepath = "/opt/homebrew/Cellar/llvm/13.0.0_2/bin/clang-13";
         if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_compile: executable_filepath: %s\n", executable_filepath.c_str());
         IntrusiveRefCntPtr<DiagnosticOptions> diagnostic_options = new DiagnosticOptions();
         TextDiagnosticPrinter *diagnostic_client = new TextDiagnosticPrinter(llvm::errs(), &*diagnostic_options);
@@ -357,7 +359,7 @@ public:
         std::unique_ptr<CompilerInvocation> compiler_invocation(new CompilerInvocation);
         CompilerInvocation::CreateFromArgs(*compiler_invocation, compiler_args, diagnostics_engine);
         // Show the invocation, with -v.
-        if(compiler_invocation->getHeaderSearchOpts().Verbose) {
+        if(clang_diagnostics_enabled() == true) {
             llvm::errs() << "clang invocation:\n";
             compilation_jobs.Print(llvm::errs(), "\n", true);
             llvm::errs() << "\n";
@@ -373,9 +375,10 @@ public:
         }
         // Infer the builtin include path if unspecified.
         if(compiler_instance.getHeaderSearchOpts().UseBuiltinIncludes && compiler_instance.getHeaderSearchOpts().ResourceDir.empty()) {
-            if (clang_diagnostics_enabled()) csound->Message(csound, "Warning: Inferrring builtin inclde path.\n");
+            if (clang_diagnostics_enabled()) csound->Message(csound, "Warning: Inferrring builtin include path.\n");
             compiler_instance.getHeaderSearchOpts().ResourceDir = CompilerInvocation::GetResourcesPath(args[0], main_address);
         }
+        if (clang_diagnostics_enabled()) csound->Message(csound, "ResourceDir: %s.\n", compiler_instance.getHeaderSearchOpts().ResourceDir.c_str());
         std::unique_ptr<CodeGenAction> emit_llvm_action(new EmitLLVMOnlyAction());
         if(!compiler_instance.ExecuteAction(*emit_llvm_action)) {
             if (clang_diagnostics_enabled()) csound->Message(csound, "Error: LLVM action was not emitted.\n");

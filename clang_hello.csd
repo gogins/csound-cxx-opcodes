@@ -37,8 +37,8 @@ prints "******* I'm about to try compiling a simple test C++ module....\n"
 
 gS_source_code = {{
 
-#include <clang_invokable.hpp>
 #include <csdl.h>
+#include <clang_invokable.hpp>
 #include <cstdio>
 #include <iostream>
 #include <string>
@@ -83,10 +83,23 @@ extern "C" {
 }}
 
 // For Darwin:
-gi_result clang_compile "csound_main", gS_source_code, "-v -std=c++14 -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I.", "-lstdc++ -m"
+// gi_result clang_compile "csound_main", gS_source_code, "-v -resource-dir -I/Users/michaelgogins/clang-opcodes -I/opt/homebrew/Cellar/llvm/13.0.0_2 -I/Library/Frameworks/CsoundLib64.framework/Headers -I/opt/homebrew/cellar/llvm/13.0.0_2/include/c++/v1 -I/Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk/usr/include -F/Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk/System/Library/Frameworks -I/Users/michaelgogins/clang-opcodes -std=c++17", "-lstdc++ -m"
+
+//gi_result clang_compile "csound_main", gS_source_code, "-v -std=c++17 -I/opt/homebrew/Cellar/csound/6.16.2_2/include/csound -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -I/Users/michaelgogins/clang-opcodes", "-lstdc++ -m"
+
+//gi_result clang_compile "csound_main", gS_source_code, "-v -std=c++17 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk -I/Users/michaelgogins/clang-opcodes -I/opt/homebrew/Cellar/csound/6.16.2_2/Frameworks/CsoundLib64.framework/Versions/6.0/Headers", "-lstdc++ -m"
+
+// Getting the JIT compiler options correct is tricky. Symlinks are not 
+// followed, so complete paths must be used. The -resource-dir flag must have 
+// same value as for standalone, homebrew-installed clang-13; look at the 
+// opcode build diagnostics to find that path.
+
+//gi_result clang_compile "csound_main", gS_source_code, "-v -d -resource-dir /opt/homebrew/Cellar/llvm/13.0.0_2/lib/clang/13.0.0 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk -I/opt/homebrew/Cellar/llvm/13.0.0_2/include -std=c++14 -stdlib=libc++ -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/cellar/llvm/13.0.0_2/include/c++/v1 -I/opt/homebrew/Cellar/llvm/13.0.0_2/lib/clang/13.0.0/include -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include -F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks", "-lstdc++ -m"
+
+gi_result clang_compile "csound_main", gS_source_code, "-v -d -resource-dir /opt/homebrew/Cellar/llvm/13.0.0_2/lib/clang/13.0.0 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk -std=c++14 -stdlib=libc++ -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/cellar/llvm/13.0.0_2/include/c++/v1 -I/opt/homebrew/Cellar/llvm/13.0.0_2/lib/clang/13.0.0/include -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include -F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks", "-lstdc++ -m"
 
 // For Linux:
-// gi_result clang_compile "csound_main", gS_source_code, "-v -std=c++14 -I/Users/michaelgogins/clang-opcodes -I/usr/local/include/csound -I.", "/usr/lib/gcc/x86_64-linux-gnu/9/libstdc++.so /usr/lib/gcc/x86_64-linux-gnu/9/libgcc_s.so /usr/lib/x86_64-linux-gnu/libm.so /usr/lib/x86_64-linux-gnu/libpthread.so"
+// gi_result clang_compile "csound_main", gS_source_code, "-v -std=c++17 -isysroot / -I/Users/michaelgogins/clang-opcodes -I/usr/local/include/csound -I.", "/usr/lib/gcc/x86_64-linux-gnu/9/libstdc++.so /usr/lib/gcc/x86_64-linux-gnu/9/libgcc_s.so /usr/lib/x86_64-linux-gnu/libm.so /usr/lib/x86_64-linux-gnu/libpthread.so"
 
 instr 1
 prints "******* Trying to invoke Hello...\n"
