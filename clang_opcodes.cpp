@@ -374,6 +374,8 @@ public:
             return 1;
         }
         // Infer the builtin include path if unspecified.
+        compiler_instance.getHeaderSearchOpts().UseBuiltinIncludes = true;
+        compiler_instance.getHeaderSearchOpts().ResourceDir = "/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers";
         if(compiler_instance.getHeaderSearchOpts().UseBuiltinIncludes && compiler_instance.getHeaderSearchOpts().ResourceDir.empty()) {
             if (clang_diagnostics_enabled()) csound->Message(csound, "Warning: Inferrring builtin include path.\n");
             compiler_instance.getHeaderSearchOpts().ResourceDir = CompilerInvocation::GetResourcesPath(args[0], main_address);

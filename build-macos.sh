@@ -10,13 +10,13 @@ rm clang_opcodes.dylib
 
 #If you need to have llvm first in your PATH, run:
 #  echo 'export PATH="/opt/homebrew/opt/llvm/bin:$PATH"' >> ~/.zshrc
-export PATH="/opt/homebrew/cellar/llvm/13.0.0_2/bin/:$PATH"
+export PATH="/opt/homebrew/cellar/llvm/13.0.1/bin/:$PATH"
 
 # For compilers to find llvm you may need to set:
-export LDFLAGS="-L/opt/homebrew/cellar/llvm/13.0.0_2/lib -Wl,-rpath,opt/homebrew/cellar/llvm/13.0.0_2/lib"
-export CPPFLAGS="-I/opt/homebrew/cellar/llvm/13.0.0_2/include"
+export LDFLAGS="-L/opt/homebrew/cellar/llvm/13.0.1/lib -Wl,-rpath,opt/homebrew/cellar/llvm/13.0.1/lib"
+export CPPFLAGS="-I/opt/homebrew/cellar/llvm/13.0.1/include"
 export CLANGLIBS2="-lclangTooling -lclangFrontendTool -lclangFrontend -lclangDriver -lclangSerialization -lclangCodeGen -lclangParse -lclangSema -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangAnalysis -lclangARCMigrate -lclangRewrite -lclangRewriteFrontend -lclangEdit -lclangAST -lclangASTMatchers -lclangLex -lclangBasic -lclang"
 which clang++
-clang++ -v -g -O2 -fPIC -shared `/opt/homebrew/cellar/llvm/13.0.0_2/bin/llvm-config --cxxflags --ldflags` -I/usr/local/include -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Headers clang_opcodes.cpp $CLANGLIBS2 `/opt/homebrew/cellar/llvm/13.0.0_2/bin/llvm-config --libs --system-libs` -o clang_opcodes.dylib
+clang++ -v -g -O2 -fPIC -shared `/opt/homebrew/cellar/llvm/13.0.1/bin/llvm-config --cxxflags --ldflags` -I/usr/local/include -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Headers clang_opcodes.cpp ${CLANGLIBS2} `/opt/homebrew/cellar/llvm/13.0.1/bin/llvm-config --libs --system-libs` -o clang_opcodes.dylib
 ls -ll
 csound --opcode-lib="./clang_opcodes.dylib" clang_hello.csd
