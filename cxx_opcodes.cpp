@@ -41,7 +41,6 @@
 #include <csdl.h>
 #include <csound.h>
 #include <OpcodeBase.hpp>
-#include <unistd.h>
 #else
 #include <csound/csdl.h>
 #include <csound/csound.h>
@@ -49,10 +48,8 @@
 #endif
 #include <cstdio>
 #include <cstdlib>
-#include <map>
-#include <memory>
-#include <mutex>
-#include <stdlib.h>
+#include <vector>
+//#include <stdlib.h>
 #include <string>
 
 /**
@@ -64,8 +61,7 @@ PUBLIC bool &cxx_diagnostics_enabled() {
     return enabled;
 }
 
-static void tokenize(std::string const &string_, const char delimiter, std::vector<std::string> &tokens)
-{
+static void tokenize(std::string const &string_, const char delimiter, std::vector<std::string> &tokens) {
     size_t start;
     size_t end = 0;
     while ((start = string_.find_first_not_of(delimiter, end)) != std::string::npos)
@@ -75,21 +71,25 @@ static void tokenize(std::string const &string_, const char delimiter, std::vect
     }
 }
 
+/**
+ * This contains handles to all dynamic link libraries compiled and loaded by 
+ * these opcodes in this Csound process.
+ */
 static std::vector<void *> &loaded_modules() {
     static std::vector<void *> loaded_modules_;
     return loaded_modules_;
 }
 
 /**
- * The `cxx_compile` opcode will call a uniquely named function that must be
+ * The `cxx_compile` opcode will call a uniquely named function that must be 
  * defined in the module. The type of this function must be
- * `int (*)(CSOUND *csound)`. This function serves as the entry point to the
- * module, similar to 'main' in a C or C++ program.
+ * `extern "C" int (*)(CSOUND *csound)`. This function serves as the entry 
+ * point to the module, similar to 'main' in a C or C++ program.
  *
  * When the entry point is called, `csoundStart` has _already_ been called,
  * and Csound is performing an init pass, which for `cxx_compile` used in the
  * orchestra header will be the first init pass in the orchestra header
- * (which is "instr 0").
+ * (that is, "instr 0").
  */
 extern "C" {
     typedef int (*csound_main_t)(CSOUND *csound);
@@ -189,7 +189,10 @@ public:
         // Look up factory.
         auto invokable_factory_name = csound->strarg2name(csound, (char *)0, S_invokable_factory->data, (char *)"", 1);
         if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::init: factory name: \"%s\"\n", invokable_factory_name);
-        // Create instance.
+        // Create instance. We simply search through all the dynamic link 
+        // libraries compiled and loaded by this Csound process. TODO: If it 
+        // turns out that there are hundreds of these, make this more 
+        // efficient.
         for (auto module_handle : loaded_modules()) {
 	        auto invokable_factory = (CxxInvokable *(*)()) csound->GetLibrarySymbol(module_handle, invokable_factory_name);
             if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::init: module_handle: %p factory: %p\n", module_handle, invokable_factory);
