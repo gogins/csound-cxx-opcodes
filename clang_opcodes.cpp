@@ -301,8 +301,8 @@ public:
         // the process; C++ doesn't allow taking the address of ::main.
         void *main_address = (void*)(intptr_t) GetExecutablePath;
         // TODO: Try swapping this for the filepath of the clang@13 program.
-        std::string executable_filepath = GetExecutablePath(args[0], main_address);
-        // executable_filepath = "/opt/homebrew/Cellar/llvm/13.0.0_2/bin/clang-13";
+        //std::string executable_filepath = GetExecutablePath(args[0], main_address);
+        std::string executable_filepath = "/opt/homebrew/Cellar/llvm/13.0.1/bin/clang-13";
         if (clang_diagnostics_enabled()) csound->Message(csound, "####### clang_compile: executable_filepath: %s\n", executable_filepath.c_str());
         IntrusiveRefCntPtr<DiagnosticOptions> diagnostic_options = new DiagnosticOptions();
         TextDiagnosticPrinter *diagnostic_client = new TextDiagnosticPrinter(llvm::errs(), &*diagnostic_options);
@@ -319,6 +319,7 @@ public:
         }
 #endif
         exit_on_error.setBanner("Csound JIT compiler ");
+        // Maybe this should be where the clang binary normally is?
         Driver clang_driver(executable_filepath, triple.str(), diagnostics_engine);
         clang_driver.setTitle("Csound JIT compiler ");
         clang_driver.setCheckInputsExist(false);
@@ -327,6 +328,9 @@ public:
         // (basically, exactly one input, and the operation mode is hard wired).
         ///SmallVector<const char *, 16> args(argv, argv + argc);
         args.push_back("-fsyntax-only");
+        /// Here we attempt to pre-empt resetting of the vital resource dir.
+        ///args.push_back("-resource-dir");
+        ///args.push_back("/opt/homebrew/Cellar/llvm/13.0.1/lib/clang/13.0.1");
         for (auto arg : args) {
             if (clang_diagnostics_enabled()) csound->Message(csound, "arg: %s\n", arg);
         }
@@ -373,13 +377,12 @@ public:
         if(!compiler_instance.hasDiagnostics()) {
             return 1;
         }
-        // Infer the builtin include path if unspecified.
-        compiler_instance.getHeaderSearchOpts().UseBuiltinIncludes = true;
-        compiler_instance.getHeaderSearchOpts().ResourceDir = "/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers";
-        if(compiler_instance.getHeaderSearchOpts().UseBuiltinIncludes && compiler_instance.getHeaderSearchOpts().ResourceDir.empty()) {
-            if (clang_diagnostics_enabled()) csound->Message(csound, "Warning: Inferrring builtin include path.\n");
-            compiler_instance.getHeaderSearchOpts().ResourceDir = CompilerInvocation::GetResourcesPath(args[0], main_address);
-        }
+        compiler_instance.getHeaderSearchOpts().UseBuiltinIncludes = false;
+        ///compiler_instance.getHeaderSearchOpts().ResourceDir = "/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers";
+        ///if(compiler_instance.getHeaderSearchOpts().UseBuiltinIncludes && compiler_instance.getHeaderSearchOpts().ResourceDir.empty()) {
+        ///    if (clang_diagnostics_enabled()) csound->Message(csound, "Warning: Inferrring builtin include path.\n");
+        ///    compiler_instance.getHeaderSearchOpts().ResourceDir = CompilerInvocation::GetResourcesPath(args[0], main_address);
+        ///}
         if (clang_diagnostics_enabled()) csound->Message(csound, "ResourceDir: %s.\n", compiler_instance.getHeaderSearchOpts().ResourceDir.c_str());
         std::unique_ptr<CodeGenAction> emit_llvm_action(new EmitLLVMOnlyAction());
         if(!compiler_instance.ExecuteAction(*emit_llvm_action)) {
