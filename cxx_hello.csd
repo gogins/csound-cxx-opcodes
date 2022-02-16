@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
 
 </CsLicense>
 <CsOptions>
--m0 --opcode-lib="./cxx_opcodes.so" -otest.wav
+-m0 --opcode-lib="./cxx_opcodes.dylib" -odac
 </CsOptions>
 <CsInstruments>
 

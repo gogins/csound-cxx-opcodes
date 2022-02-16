@@ -49,7 +49,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <vector>
-//#include <stdlib.h>
+#include <stdlib.h>
 #include <string>
 
 /**
@@ -151,6 +151,12 @@ public:
             result = csound->OpenLibrary(&module_handle, module_filepath);
             loaded_modules().push_back(module_handle);
             csound_main_t entry_point_symbol = (csound_main_t) csound->GetLibrarySymbol(module_handle, entry_point);
+            if (cxx_diagnostics_enabled()) {
+                csound->Message(csound, "####### cxx_compile: loading:      %s\n", module_filepath);
+                csound->Message(csound, "####### cxx_compile: handle:       %s\n", module_handle);
+                csound->Message(csound, "####### cxx_compile: entry point:  %s\n", entry_point);
+                csound->Message(csound, "####### cxx_compile: symbol:       %s\n", entry_point_symbol);
+            }
             result = entry_point_symbol(csound);
         }
         return result;
@@ -225,9 +231,12 @@ public:
     int noteoff(CSOUND *csound) {
         if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::noteoff\n");
         int result = OK;
+        if (cxx_invokable->opds == nullptr) {
+            return OK;
+        }
         result = cxx_invokable->noteoff(csound);
-        cxx_invokable.reset();
         if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::noteoff: invokable::noteoff: result: %d\n", result);
+        cxx_invokable.reset();
     	return result;
     }
 };

@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
 */
 
 #include <csdl.h>
+#include <cstdio>
 #include <cstring>
 
 /**
@@ -76,6 +77,9 @@ class CxxInvokableBase : public CxxInvokable {
              return value;
         }
         int kontrol(CSOUND *csound_, MYFLT **outputs, MYFLT **inputs) override {
+            if (opds == nullptr) {
+                return -0;
+            }
             int result = OK;
             int frame_index = 0;
             for( ; frame_index < kperiodOffset(); ++frame_index) {
@@ -92,15 +96,33 @@ class CxxInvokableBase : public CxxInvokable {
         }
         int noteoff(CSOUND *csound) override 
         {
+            if (opds == nullptr) {
+                return -0;
+            }
+            std::fprintf(stderr, "noteoff...\n");
             int result = OK;
+            std::fprintf(stderr, "noteoff.\n");
             return result;
         }
         uint32_t kperiodOffset() const
         {
-            return opds->insdshead->ksmps_offset;
+            if (opds == nullptr) {
+                return -0;
+            }
+            std::fprintf(stderr, "kperiodOffset...\n");
+            uint32_t offset = 0;
+            if (opds != nullptr) {
+                std::fprintf(stderr, "opds: %p\n", opds);
+                offset = opds->insdshead->ksmps_offset;
+            }
+            std::fprintf(stderr, "kperiodOffset.\n");
+            return offset;
         }
         uint32_t kperiodEnd() const
         {
+            if (opds == nullptr) {
+                return -0;
+            }
             uint32_t end = opds->insdshead->ksmps_no_end;
             if (end) {
                 return end;
@@ -110,14 +132,23 @@ class CxxInvokableBase : public CxxInvokable {
         }
         uint32_t ksmps() const
         {
+            if (opds == nullptr) {
+                return -0;
+            }
             return opds->insdshead->ksmps;
         }
         uint32_t output_arg_count()
         {
+            if (opds == nullptr) {
+                return -0;
+            }
             return (uint32_t)opds->optext->t.outArgCount;
         }
         uint32_t input_arg_count()
         {
+            if (opds == nullptr) {
+                return- 0;
+            }
             // The first two input arguments belong to the invoking opcode.
             return (uint32_t)opds->optext->t.inArgCount - 2;
         }
