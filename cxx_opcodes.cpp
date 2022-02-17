@@ -41,6 +41,7 @@
 #include <csdl.h>
 #include <csound.h>
 #include <OpcodeBase.hpp>
+#include <unistd.h>
 #else
 #include <csound/csdl.h>
 #include <csound/csound.h>
@@ -48,9 +49,11 @@
 #endif
 #include <cstdio>
 #include <cstdlib>
-#include <vector>
+#include <mutex>
 #include <stdlib.h>
 #include <string>
+#include <vector>
+
 
 /**
  * Diagnostics are global for all these opcodes, and also for 
@@ -153,9 +156,9 @@ public:
             csound_main_t entry_point_symbol = (csound_main_t) csound->GetLibrarySymbol(module_handle, entry_point);
             if (cxx_diagnostics_enabled()) {
                 csound->Message(csound, "####### cxx_compile: loading:      %s\n", module_filepath);
-                csound->Message(csound, "####### cxx_compile: handle:       %s\n", module_handle);
+                csound->Message(csound, "####### cxx_compile: handle:       %p\n", module_handle);
                 csound->Message(csound, "####### cxx_compile: entry point:  %s\n", entry_point);
-                csound->Message(csound, "####### cxx_compile: symbol:       %s\n", entry_point_symbol);
+                csound->Message(csound, "####### cxx_compile: symbol:       %p\n", entry_point_symbol);
             }
             result = entry_point_symbol(csound);
         }
@@ -164,6 +167,8 @@ public:
 };
 
 #include "cxx_invokable.hpp"
+
+static std::mutex invokable_mutex;
 
 /**
  * Assuming that `cxx_compile` has already compiled a module that
@@ -191,30 +196,31 @@ public:
     std::shared_ptr<CxxInvokable> cxx_invokable;
     int init(CSOUND *csound)
     {
+        std::lock_guard<std::mutex> lock(invokable_mutex);
         int result = OK;
         // Look up factory.
-        auto invokable_factory_name = csound->strarg2name(csound, (char *)0, S_invokable_factory->data, (char *)"", 1);
-        if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::init: factory name: \"%s\"\n", invokable_factory_name);
+        auto invokable_factory_name = S_invokable_factory->data;
+        if (cxx_diagnostics_enabled()) csound->Message(csound,     "####### cxx_invoke::init: invokable_factory_name:  \"%s\"\n", invokable_factory_name);
         // Create instance. We simply search through all the dynamic link 
         // libraries compiled and loaded by this Csound process. TODO: If it 
         // turns out that there are hundreds of these, make this more 
         // efficient.
         for (auto module_handle : loaded_modules()) {
+            if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::init: module_handle:           %p\n", module_handle);
 	        auto invokable_factory = (CxxInvokable *(*)()) csound->GetLibrarySymbol(module_handle, invokable_factory_name);
-            if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::init: module_handle: %p factory: %p\n", module_handle, invokable_factory);
-	        if (invokable_factory == nullptr) {
-	            continue;
-	        }
-            if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::init: factory function: %p\n", invokable_factory);
-            auto instance = invokable_factory();
-          	if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::init: instance: %p thread: %d\n", instance, thread);
-	        cxx_invokable.reset(instance);
-            if (thread == 2) {
-                return result;
+	        if (invokable_factory != nullptr) {
+                if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::init: invokable_factory:       %p\n", invokable_factory);
+                auto instance = invokable_factory();
+              	if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::init: instance:                %p thread: %d\n", instance, thread);
+	            cxx_invokable.reset(instance);
+                if (thread == 2) {
+                    return result;
+                }
+                // Invoke the instance.
+                result = cxx_invokable->init(csound, &opds, outputs, inputs);
+                if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::init: invokable::init: result: %d\n", result);
+                break;
             }
-            // Invoke the instance.
-            result = cxx_invokable->init(csound, &opds, outputs, inputs);
-            if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::init: invokable::init: result: %d\n", result);
         }
         return result;
     }
@@ -231,9 +237,6 @@ public:
     int noteoff(CSOUND *csound) {
         if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::noteoff\n");
         int result = OK;
-        if (cxx_invokable->opds == nullptr) {
-            return OK;
-        }
         result = cxx_invokable->noteoff(csound);
         if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::noteoff: invokable::noteoff: result: %d\n", result);
         cxx_invokable.reset();

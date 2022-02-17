@@ -154,6 +154,9 @@ class CxxInvokableBase : public CxxInvokable {
         }
         void log(const char *format,...)
         {
+            if (opds == nullptr) {
+                return;
+            }
             va_list args;
             va_start(args, format);
             if(csound) {
@@ -165,6 +168,9 @@ class CxxInvokableBase : public CxxInvokable {
         }
         void warn(const char *format,...)
         {
+            if (opds == nullptr) {
+                return;
+            }
             if(csound) {
                 if(csound->GetMessageLevel(csound) & CS_WARNMSG) {
                     va_list args;
