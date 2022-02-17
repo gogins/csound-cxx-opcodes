@@ -27,7 +27,7 @@ channel values at the beginning of, or during, the performance.
 These opcodes do not embed the C++ compiler, but rather use the operating 
 system and an installed C++ toolchain to execute a C++ compilation. The 
 resulting dynamic link libraries are then loaded by Csound and symbols in them 
-can then be invoked by Csound.
+can be invoked by Csound.
 
 # cxx_compile
 
