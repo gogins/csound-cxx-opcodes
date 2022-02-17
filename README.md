@@ -9,11 +9,16 @@ The CXX opcodes provide a means for Csound users to embed C++ source code
 in Csound orchestra code, and for Csound then to compile, load, link, and run 
 C++ during the course of the Csound performance.
 
+This could of course be done outside of Csound, e.g. by writing plugin 
+opcodes. However, experience shows that bringing the C++ code and build 
+commands into Csound provides a _considerably_ more efficient composing 
+environment.
+
 The `cxx_compile` opcode compiles C++ source, embedded in a Csound 
 orchestra, into a dynamic link library, and executes its entry point at init 
 time.
 
-The `cxx_invoke` opcode enables an opcode-link invocable interface to be 
+The `cxx_invoke` opcode enables an opcode-like invocable interface to be 
 created and called code during the Csound performance, either at init time, or 
 at k-rate. Commonly, this is used to implement new Csound opcodes directly in 
 C++ from the Csound orchestra. It is also used to generate scores or control 
@@ -188,14 +193,14 @@ rate, as defined in [entry1.c](https://github.com/csound/csound/blob/develop/Eng
 These are actually the input arguments provided by the Csound runtime to `cxx_invoke`.
 
 *[m_output_1,...]* - From 0 to 40 Csound variables, of any type, size, 
-shape, or rate. These are actually the output arguments provided by the Csound runtime 
-for `cxx_invoke`.
+shape, or rate. These are actually the output arguments provided by the Csound 
+runtime for `cxx_invoke`.
 
-The *S_cxx_invokeable* symbol is looked up in the LLVM execution session 
-of the global ORC compiler, and a new instance of the `CxxInvokable` class 
-is created. `cxx_invoke` then calls the `CxxInvokable::init` method with 
-the input and output arguments, and any output values computed by the 
-`CxxInvokable` are returned in the elements of the *outputs* argument.
+The *S_cxx_invokeable* symbol is looked up in the loaded dynamic link library, 
+and a new instance of the `CxxInvokable` class is created. `cxx_invoke` then 
+calls the `CxxInvokable::init` method with the input and output arguments, and 
+any output values computed by the `CxxInvokable` are returned in the elements 
+of the *outputs* argument.
 
 Because of the variable numbers and types of arguments, it is virtually 
 impossible for `cxx_invoke` to perform type checking at compile time. The user 
