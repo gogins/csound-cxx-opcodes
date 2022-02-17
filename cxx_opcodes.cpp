@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2021 by Michael Gogins
  * 
- * xcxx-opcodes is free software; you can redistribute it
+ * cxx-opcodes is free software; you can redistribute it
  * and/or modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
@@ -192,12 +192,13 @@ public:
     MYFLT *i_thread;
     MYFLT *inputs[VARGMAX];
     // STATE
-    int thread = (int) *i_thread;
+    int thread;
     std::shared_ptr<CxxInvokable> cxx_invokable;
     int init(CSOUND *csound)
     {
         std::lock_guard<std::mutex> lock(invokable_mutex);
         int result = OK;
+        thread = (int) *i_thread;
         // Look up factory.
         auto invokable_factory_name = S_invokable_factory->data;
         if (cxx_diagnostics_enabled()) csound->Message(csound,     "####### cxx_invoke::init: invokable_factory_name:  \"%s\"\n", invokable_factory_name);
@@ -206,20 +207,20 @@ public:
         // turns out that there are hundreds of these, make this more 
         // efficient.
         for (auto module_handle : loaded_modules()) {
-            if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::init: module_handle:           %p\n", module_handle);
+            if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::init: library handle:          %p\n", module_handle);
 	        auto invokable_factory = (CxxInvokable *(*)()) csound->GetLibrarySymbol(module_handle, invokable_factory_name);
 	        if (invokable_factory != nullptr) {
-                if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::init: invokable_factory:       %p\n", invokable_factory);
+                if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::init: found invokable factory: %p\n", invokable_factory);
                 auto instance = invokable_factory();
-              	if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::init: instance:                %p thread: %d\n", instance, thread);
+              	if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::init: created new invokable:   %p for thread: %d\n", instance, thread);
 	            cxx_invokable.reset(instance);
                 if (thread == 2) {
                     return result;
                 }
                 // Invoke the instance.
                 result = cxx_invokable->init(csound, &opds, outputs, inputs);
-                if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::init: invokable::init: result: %d\n", result);
-                break;
+                if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::init: result of invokation:    %d\n", result);
+                return result;
             }
         }
         return result;

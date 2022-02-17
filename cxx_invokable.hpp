@@ -99,9 +99,7 @@ class CxxInvokableBase : public CxxInvokable {
             if (opds == nullptr) {
                 return -0;
             }
-            std::fprintf(stderr, "noteoff...\n");
             int result = OK;
-            std::fprintf(stderr, "noteoff.\n");
             return result;
         }
         uint32_t kperiodOffset() const
@@ -109,14 +107,7 @@ class CxxInvokableBase : public CxxInvokable {
             if (opds == nullptr) {
                 return -0;
             }
-            std::fprintf(stderr, "kperiodOffset...\n");
-            uint32_t offset = 0;
-            if (opds != nullptr) {
-                std::fprintf(stderr, "opds: %p\n", opds);
-                offset = opds->insdshead->ksmps_offset;
-            }
-            std::fprintf(stderr, "kperiodOffset.\n");
-            return offset;
+            return opds->insdshead->ksmps_offset;
         }
         uint32_t kperiodEnd() const
         {

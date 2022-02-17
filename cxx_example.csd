@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
 
 </CsLicense>
 <CsOptions>
--m0 -d --opcode-lib="./cxx_opcodes.dylib" -odac
+-m165 -d --opcode-lib="./cxx_opcodes.dylib" -odac0
 </CsOptions>
 <CsInstruments>
 
@@ -1556,7 +1556,7 @@ extern "C" {
 
 }}
 
-i_result cxx_compile "guitar_main", S_guitar_source_code, "-g -v -O2 -shared -std=c++14 -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/faust/2.37.3/include -I. -L/opt/homebrew/Cellar/faust/2.37.3/lib -lm -lpthread"
+i_result cxx_compile "guitar_main", S_guitar_source_code, "-g -v -O2 -fPIC -shared -std=c++14 -stdlib=libc++ -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/faust/2.37.3/include -I. -L/opt/homebrew/Cellar/faust/2.37.3/lib -lm -lpthread"
 
 gk_ClangGuitar_level chnexport "gk_ClangGuitar_level", 3
 gk_ClangGuitar_shape chnexport "gk_ClangGuitar_shape", 3
@@ -1633,15 +1633,15 @@ class InvokableReverb : public CxxInvokableBase {
             if (diagnostics_enabled) csound->Message(csound, ">>>>>>> InvokableReverb::~InvokableReverb.\\n");
         }
         int init(CSOUND *csound, OPDS *opds, MYFLT **outputs, MYFLT **inputs) override {
-            if (diagnostics_enabled) csound->Message(csound, ">>>>>>> InvokableReverb::init.\\n");
+            if (diagnostics_enabled) csound->Message(csound, ">>>>>>> InvokableReverb::init....\\n");
             int result = OK;
             reverberator_left.setSampleRate(csound->GetSr(csound));
             reverberator_right.setSampleRate(csound->GetSr(csound));
             result = CxxInvokableBase::init(csound, opds, outputs, inputs);
             MYFLT T60 = *(inputs[0]);
-            if (diagnostics_enabled) csound->Message(csound, ">>>>>>> InvokableReverb:  T60: %9.4f.\\n", T60);
             reverberator_left.setT60(T60);
             reverberator_right.setT60(T60);
+            if (diagnostics_enabled) csound->Message(csound, ">>>>>>> InvokableReverb::init:  T60: %9.4f.\\n", T60);
             return result;
         }
         int kontrol(CSOUND *csound, MYFLT **outputs, MYFLT **inputs) override {
@@ -1682,14 +1682,14 @@ extern "C" {
     CxxInvokable *reverb_factory() {
         if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> This is \\"reverb_factory\\".\\n");
         auto result = new InvokableReverb;
-        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> \\"reverb_factory\\" newed %p.\\n", result);
+        if (diagnostics_enabled) std::fprintf(stderr, ">>>>>>> \\"reverb_factory\\" created %p.\\n", result);
         return result;
     }
 };
 
 }}
 
-i_result cxx_compile "reverb_main", S_reverb_code, "-g -v -O2 -shared -std=c++14 -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/stk/4.6.2/include -I. -stdlib=libc++ -L/opt/homebrew/lib -lstk -lm -lpthread"
+i_result cxx_compile "reverb_main", S_reverb_code, "-g -v -O2 -fPIC -shared -std=c++14 -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/stk/4.6.2/include -I. -L/opt/homebrew/lib -lstk -lm -lpthread"
 
 gk_MasterOutput_level chnexport "gk_MasterOutput_level", 3
 gk_MasterOutput_level init 0
@@ -1699,8 +1699,9 @@ instr MasterOutput
 S_MasterOutput_filename init ""
 aleft_in inleta "inleft"
 aright_in inleta "inright"
-aleft, aright cxx_invoke "reverb_factory", 3, gk_MasterOutput_reverb_T60, aleft_in, aright_in
 k_gain = ampdb(gk_MasterOutput_level)
+printks2 "Master gain: %f\n", k_gain
+aleft, aright cxx_invoke "reverb_factory", 3, gk_MasterOutput_reverb_T60, aleft_in, aright_in
 printks2 "Master gain: %f\n", k_gain
 iamp init 1
 aleft butterlp aleft, 12000
@@ -1871,12 +1872,13 @@ extern "C" int score_generator(CSOUND *csound) {
     rescale(scaling, score, 4, true, true, 20.,   10.0);
     auto csound_score = to_csound_score(score);
     csound->InputMessage(csound, csound_score.c_str());
+    csound->Message(csound, "Sent generated score.\\n");
     return result;
 }
 
 }}
 
-i_result cxx_compile "score_generator", S_score_generator_code, "-g -v -O2 -shared -stdlib=libc++ -std=c++14 -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/eigen/3.4.0_1/include -lm -lpthread"
+i_result cxx_compile "score_generator", S_score_generator_code, "-g -v -O2 -fPIC -shared -std=c++14 -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/eigen/3.4.0_1/include -lm -lpthread"
 
 </CsInstruments>
 <CsScore>
