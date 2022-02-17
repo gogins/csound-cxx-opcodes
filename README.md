@@ -57,7 +57,7 @@ dynamic link libraries.
 
 *S_source_code* - C++ source code. Can be a multi-line string literal 
 enclosed in `{{` and `}}`. Please note, this string is a "heredoc" and, thus, 
-any `\` characters in it must be escaped, e.g. one must write `\\n` not '\n' 
+any `\` characters in it must be escaped, e.g. one must write `\\n` not `\n` 
 for a newline character. The source code represents one translation unit, but 
 it can be as large as needed.
 
