@@ -519,14 +519,14 @@ class InvokableReverb : public CxxInvokableBase {
             reverberator_right.setSampleRate(csound->GetSr(csound));
             result = CxxInvokableBase::init(csound, opds, outputs, inputs);
             MYFLT T60 = *(inputs[0]);
-            reverberator_left.setT60(T60);
-            reverberator_right.setT60(T60);
+            reverberator_left.setT60(T60*127);
+            reverberator_right.setT60(T60*127);
             if (diagnostics_enabled) csound->Message(csound, ">>>>>>> InvokableReverb::init:  T60: %9.4f.\\n", T60);
             return result;
         }
         int kontrol(CSOUND *csound, MYFLT **outputs, MYFLT **inputs) override {
             int result = OK;
-            MYFLT T60 = *(inputs[0]);
+            //MYFLT T60 = *(inputs[0]);
             //reverberator_left.setT60(T60);
             //reverberator_right.setT60(T60);
             int frame_index = 0;
@@ -571,19 +571,14 @@ extern "C" {
 
 i_result cxx_compile "reverb_main", S_reverb_code, "-g -v -O2 -fPIC -shared -std=c++14 -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/stk/4.6.2/include -I. -L/opt/homebrew/lib -lstk -lm -lpthread"
 
-gk_Reverb_feedback init 1.7
-gi_Reverb_delay_modulation init 0.015
-gk_Reverb_frequency_cutoff init 15000
+gk_Reverb_feedback init .07
 instr ReverbSC
 aleftout init 0
 arightout init 0
-aleft inleta "inleft"
-aright inleta "inright"
-; aoutL, aoutR reverbsc ainL, ainR, kfblvl, kfco[, israte[, ipitchm[, iskip]]]
-; aleftout, arightout reverbsc aleft, aright, gk_Reverb_feedback, gk_Reverb_frequency_cutoff, sr, gi_Reverb_delay_modulation
-aleftout, arightout cxx_invoke "reverb_factory", 3, gi_Reverb_delay_modulation, aleft, aright
+aleftin inleta "inleft"
+arightin inleta "inright"
+aleftout, arightout cxx_invoke "reverb_factory", 3, gk_Reverb_feedback, aleftin, arightin
 outleta "outleft", aleftout
-;arightout *= 4
 outleta "outright", arightout
 prints "ReverbSC       i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\\n", p1, p2, p3, p4, p5, p1/6, active(p1)
 endin
