@@ -139,7 +139,7 @@ for other purposes, e.g. simply as a way to call some function in the
 
 ## Syntax
 ```
-[m_output_1,...] cxx_invoke S_cxx_invokeable, i_thread, [, m_input_1,...]
+[m_output_1,...] cxx_invoke S_cxx_invokable, i_thread, [, m_input_1,...]
 ```
 ## Initialization
 

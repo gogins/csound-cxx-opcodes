@@ -11,7 +11,7 @@ Arranged for Csound by Michael Gogins
 sr = 48000
 ksmps = 128
 nchnls = 2
-0dbfs = 5
+0dbfs = 10
 
 gi_ampmidicurve_dynamic_range init .375
 gi_ampmidicurve_exponent init 5
@@ -22,22 +22,22 @@ prealloc "Harpsichord", 4
 prealloc "YiString", 4
 prealloc "Bower", 4
 
-connect "Guitar", "outleft", "ReverbSC", "inleft"
-connect "Guitar", "outleft", "ReverbSC", "inleft"
-connect "ZakianFlute", "outleft", "ReverbSC", "inleft"
-connect "ZakianFlute", "outleft", "ReverbSC", "inleft"
-connect "Harpsichord", "outleft", "ReverbSC", "inleft"
-connect "Harpsichord", "outright", "ReverbSC", "inright"
-connect "YiString", "outleft", "ReverbSC", "inleft"
-connect "YiString", "outright", "ReverbSC", "inright"
-connect "Bower", "outleft", "ReverbSC", "inleft"
-connect "Bower", "outright", "ReverbSC", "inright"
-connect "ReverbSC", "outleft", "MasterOutput", "inleft"
-connect "ReverbSC", "outright", "MasterOutput", "inright"
+connect "Guitar", "outleft", "CxxReverb", "inleft"
+connect "Guitar", "outleft", "CxxReverb", "inleft"
+connect "ZakianFlute", "outleft", "CxxReverb", "inleft"
+connect "ZakianFlute", "outleft", "CxxReverb", "inleft"
+connect "Harpsichord", "outleft", "CxxReverb", "inleft"
+connect "Harpsichord", "outright", "CxxReverb", "inright"
+connect "YiString", "outleft", "CxxReverb", "inleft"
+connect "YiString", "outright", "CxxReverb", "inright"
+connect "Bower", "outleft", "CxxReverb", "inleft"
+connect "Bower", "outright", "CxxReverb", "inright"
+connect "CxxGuitar", "outleft", "CxxReverb", "inleft"
+connect "CxxGuitar", "outright", "CxxReverb", "inright"
+connect "CxxReverb", "outleft", "MasterOutput", "inleft"
+connect "CxxReverb", "outright", "MasterOutput", "inright"
 
-
-
-alwayson "ReverbSC"
+alwayson "CxxReverb"
 alwayson "MasterOutput"
 
 gk_overlap init .0125
@@ -486,7 +486,6 @@ kctl5     midictrl  5
 printks2 "kctl5   %9.4f\n", kctl5
 kafter    aftouch   1
 printks2 "kafter  %9.4f\n", kafter
-
 endin
 
 S_reverb_code init {{
@@ -519,8 +518,8 @@ class InvokableReverb : public CxxInvokableBase {
             reverberator_right.setSampleRate(csound->GetSr(csound));
             result = CxxInvokableBase::init(csound, opds, outputs, inputs);
             MYFLT T60 = *(inputs[0]);
-            reverberator_left.setT60(T60*127);
-            reverberator_right.setT60(T60*127);
+            reverberator_left.setT60(T60);
+            reverberator_right.setT60(T60);
             if (diagnostics_enabled) csound->Message(csound, ">>>>>>> InvokableReverb::init:  T60: %9.4f.\\n", T60);
             return result;
         }
@@ -571,8 +570,8 @@ extern "C" {
 
 i_result cxx_compile "reverb_main", S_reverb_code, "-g -v -O2 -fPIC -shared -std=c++14 -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/stk/4.6.2/include -I. -L/opt/homebrew/lib -lstk -lm -lpthread"
 
-gk_Reverb_feedback init .07
-instr ReverbSC
+gk_Reverb_feedback init 2.2
+instr CxxReverb
 aleftout init 0
 arightout init 0
 aleftin inleta "inleft"
@@ -580,7 +579,7 @@ arightin inleta "inright"
 aleftout, arightout cxx_invoke "reverb_factory", 3, gk_Reverb_feedback, aleftin, arightin
 outleta "outleft", aleftout
 outleta "outright", arightout
-prints "ReverbSC       i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\\n", p1, p2, p3, p4, p5, p1/6, active(p1)
+prints "CxxReverb      i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\\n", p1, p2, p3, p4, p5, p1/6, active(p1)
 endin
 
 gk_MasterOutput_level init -15
@@ -750,7 +749,7 @@ extern "C" int score_generator(CSOUND *csound) {
                            
     transformations[3] << .5,  0,  0,  0,  0,  0,  0,
                            0, .5,  0,  0,  0,  0,  1.05,
-                           0,  0, .5,  0,  0,  0,  0,
+                           0,  0, .5,  0, -1,  0,  0,
                            0,  0,  0, .45, 0,  0,  1,
                            0,  0,  0,  0, .5,  0,  0,
                            0,  0,  .1, 0,  0, .5,  0,
@@ -758,7 +757,7 @@ extern "C" int score_generator(CSOUND *csound) {
     Score score;
     Scaling scaling;
     multiple_copy_reducing_machine(note, transformations, score, 6);
-    rescale(scaling, score, 0, true, true,  1.,    1.999);
+    rescale(scaling, score, 0, true, true,  1.,    4.999);
     rescale(scaling, score, 1, true, true,  1.,  120.0);
     rescale(scaling, score, 2, true, true,  3,     6.);
     rescale(scaling, score, 3, true, true, 24.,   72.0);
@@ -773,10 +772,9 @@ extern "C" int score_generator(CSOUND *csound) {
 
 i_result cxx_compile "score_generator", S_score_generator_code, "-g -v -O2 -fPIC -shared -std=c++14 -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/eigen/3.4.0_1/include -lpthread"
 
-
 </CsInstruments>
 <CsScore>
 
-f 0 300
+f 0 125
 </CsScore>
 </CsoundSynthesizer>
