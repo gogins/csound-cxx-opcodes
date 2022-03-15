@@ -43,9 +43,9 @@
 #include <OpcodeBase.hpp>
 #include <unistd.h>
 #else
-#include <csound/csdl.h>
-#include <csound/csound.h>
-#include <csound/OpcodeBase.hpp>
+#include <csdl.h>
+#include <csound.h>
+#include <OpcodeBase.hpp>
 #endif
 #include <cstdio>
 #include <cstdlib>
