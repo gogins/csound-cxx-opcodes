@@ -49,6 +49,7 @@
 #endif
 #include <cstdio>
 #include <cstdlib>
+#include <memory>
 #include <mutex>
 #include <stdlib.h>
 #include <string>
