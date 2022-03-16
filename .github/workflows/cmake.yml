@@ -88,7 +88,7 @@ jobs:
             LICENSE
             README.md
             *.csd
-            *.dylib
+            ${{github.workspace}}/build/*.dylib
 
       - uses: "marvinpinto/action-automatic-releases@latest"
         if: runner.os == 'Linux'
@@ -101,7 +101,7 @@ jobs:
             LICENSE
             README.md
             *.csd
-            *.so
+            ${{github.workspace}}/build/*.so
            
       - uses: "marvinpinto/action-automatic-releases@latest"
         if: runner.os == 'Windows'
@@ -114,7 +114,7 @@ jobs:
             LICENSE
             README.md
             *.csd
-            *.dll
+            ${{github.workspace}}/build/*.dll
 
 
 
