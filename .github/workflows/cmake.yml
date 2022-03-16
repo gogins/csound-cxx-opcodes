@@ -89,6 +89,7 @@ jobs:
             README.md
             *.csd
             ${{github.workspace}}/build/*.dylib
+            ${{github.workspace}}/build/*.so
 
       - uses: "marvinpinto/action-automatic-releases@latest"
         if: runner.os == 'Linux'

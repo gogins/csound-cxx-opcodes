@@ -56,6 +56,7 @@
 #include <vector>
 #if defined(__WINDOWS__)
 #pragma warning(disable : 4996)
+#include <fileapi.h>
 #endif
 
 
