@@ -54,6 +54,9 @@
 #include <stdlib.h>
 #include <string>
 #include <vector>
+#if defined(__WINDOWS__)
+#pragma warning(disable : 4996)
+#endif
 
 
 /**
