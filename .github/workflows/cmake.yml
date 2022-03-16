@@ -9,6 +9,123 @@ on:
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
+  # This will change for later macOS versions, to /opt/homebrew.
+  HOMEBREW_PREFIX: /usr/local
+jobs:
+  build:
+    runs-on: ${{ matrix.config.os }} 
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - name: "macOS Latest Clang"
+          os: macos-latest
+          cc: "clang"
+          cxx: "clang++"
+        - name: "Ubuntu Latest GCC"
+          os: ubuntu-latest
+          cc: "gcc"
+          cxx: "g++"
+        - name: "Windows Latest MSVC"
+          os: windows-latest
+          cc: "cl"
+          cxx: "cl"
+          environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Build on Mac OS
+        if: runner.os == 'macOS'
+        - name: Configure CMake
+          # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+          # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type      
+          run: |
+            echo "Updating all git submodules..."
+            git submodule update --init --recursive
+            git submodule status --recursive
+            sudo -k
+            echo "Finished updating all git submodules."
+            echo "Trying to find csdl.h..."
+            find /Users/runner -name "csdl.h" -ls 2>/dev/null
+            cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+       - name: Build
+         # Build your program with the given configuration
+         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+          
+      - name: Build on Linux
+        if: runner.os == 'Linux'
+        - name: Configure CMake
+          # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+          # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type      
+          run: |
+            echo "Updating all git submodules..."
+            git submodule update --init --recursive
+            git submodule status --recursive
+            sudo -k
+            echo "Finished updating all git submodules."
+            echo "Trying to find csdl.h..."
+            find /Users/runner -name "csdl.h" -ls 2>/dev/null
+            cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+       - name: Build
+         # Build your program with the given configuration
+         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+        
+      - name: Build on Windows
+        if: runner.os == 'Windows'
+        - name: Configure CMake
+          # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+          # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type      
+          run: |
+            echo "Updating all git submodules..."
+            git submodule update --init --recursive
+            git submodule status --recursive
+            sudo -k
+            echo "Finished updating all git submodules."
+            cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        - name: Build
+        # Build your program with the given configuration
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+                      
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        if: runner.os == 'macOS'
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "macos-latest"
+          prerelease: true
+          title: "Mac OS Development Release"
+          files: |
+            LICENSE
+            README.md
+            *.csd
+            *.dylib
+
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        if: runner.os == 'Linux'
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "linux-latest"
+          prerelease: true
+          title: "Linux Development Release"
+          files: |
+            LICENSE
+            README.md
+            *.csd
+            *.so
+           
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        if: runner.os == 'Windows'
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "windows-latest"
+          prerelease: true
+          title: "Windows Development Release"
+          files: |
+            LICENSE
+            README.md
+            *.csd
+            *.dll
+
 
 jobs:
   build:
