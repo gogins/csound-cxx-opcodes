@@ -78,6 +78,7 @@ jobs:
           cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
           dir ${{github.workspace}}/build
           dir ${{github.workspace}}/build/Release
+          dir ${{github.workspace}}/build/x64
 
       - uses: "marvinpinto/action-automatic-releases@latest"
         if: runner.os == 'macOS'
