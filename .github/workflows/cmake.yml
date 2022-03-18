@@ -119,8 +119,8 @@ jobs:
             LICENSE
             README.md
             *.csd
-            ${{github.workspace}}\build\x64\Release\cxx_opcodes.dll
-            ${{github.workspace}}\build\x64\Debug\cxx_opcodes.dll
+            ${{github.workspace}}\**\cxx_opcodes.dll
+            ${{github.workspace}}/**/cxx_opcodes.dll
 
 
 
