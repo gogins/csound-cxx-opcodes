@@ -4,7 +4,7 @@
 Arranged for Csound by Michael Gogins
 </CsLicense>
 <CsOptions>
--+msg_color=0 -odac0 -m195 -d --opcode-lib="./cxx_opcodes.dylib"
+-+msg_color=0 -odac0 -m195 -d --opcode-lib="./libcxx_opcodes.so"
 </CsOptions>
 <CsInstruments>
 
@@ -272,9 +272,7 @@ a_out_left, a_out_right pan2 a_signal, gk_ZakianFlute_pan
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
 #endif
-;prints "ZakianFlute    i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, gk_ZakianFlute_pan, active(p1)
 prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, gk_ZakianFlute_pan, active(p1)
-
 endin
 
 gk_Guitar_level init 8
@@ -326,7 +324,7 @@ a_out_left, a_out_right pan2 a_signal, p1/6
 outleta "outleft", a_out_left
 outleta "outright", a_out_right
 #endif
-prints "Guitar         i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p1/6, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, gk_ZakianFlute_pan, active(p1)
 endin
 
 gk_YiString_level init 6
@@ -383,7 +381,7 @@ outleta "chorusleft", a_out_left * gk_YiString_chorus_send
 outleta "chorusright", a_out_right * gk_YiString_chorus_send
 ;printks "YiString         %9.4f  %9.4f\n", 0.5, a_out_left, a_out_right
 #endif
-prints  "YiString       i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p1/6, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, gk_ZakianFlute_pan, active(p1)
 endin
 
 gk_Bower_level init 20
@@ -424,7 +422,7 @@ aright = adamping * aright
 kgain = ampdb(gk_Bower_level)
 outleta "outleft", aleft * kgain
 outleta "outright", aright * kgain 
-prints "Bower          i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p1/6, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, gk_ZakianFlute_pan, active(p1)
 endin
 
 gk_Harpsichord_level init 0
@@ -475,7 +473,7 @@ outleta "outleft", a_out_left
 outleta "outright", a_out_right
 #endif
 ; printks "Harpsichord      %9.4f   %9.4f\n", 0.5, a_out_left, a_out_right
-prints "Harpsichord    i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p1/6, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, gk_ZakianFlute_pan, active(p1)
 kpbend    pchbend   2
 printks2 "pchbend %9.4f\n", kpbend
 kmodw     midictrl  1
@@ -570,7 +568,7 @@ extern "C" {
 
 }}
 
-i_result cxx_compile "reverb_main", S_reverb_code, "-g -v -O2 -fPIC -shared -std=c++14 -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/stk/4.6.2/include -I. -L/opt/homebrew/lib -lstk -lm -lpthread"
+i_result cxx_compile "reverb_main", S_reverb_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/stk/4.6.2/include -I. -L/opt/homebrew/lib -lstk -lm -lpthread"
 
 gk_Reverb_feedback init 2.2
 instr CxxReverb
@@ -581,7 +579,7 @@ arightin inleta "inright"
 aleftout, arightout cxx_invoke "reverb_factory", 3, gk_Reverb_feedback, aleftin, arightin
 outleta "outleft", aleftout
 outleta "outright", arightout
-prints "CxxReverb      i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\\n", p1, p2, p3, p4, p5, p1/6, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, gk_ZakianFlute_pan, active(p1)
 endin
 
 gk_MasterOutput_level init -15
@@ -608,7 +606,7 @@ has_filename:
 prints sprintf("Output filename: %s\n", gS_MasterOutput_filename)
 fout gS_MasterOutput_filename, 18, aleft * i_amplitude_adjustment, aright * i_amplitude_adjustment
 non_has_filename:
-prints "MasterOutput   i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", p1, p2, p3, p4, p5, p1/6, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, gk_ZakianFlute_pan, active(p1)
 kstatus, kchan, kdata1, kdata2 midiin
 ;printf "          midi in s %4d c %4d %4d %4d\n", kdata2, kstatus, kchan, kdata1, kdata2
 endin
@@ -772,7 +770,7 @@ extern "C" int score_generator(CSOUND *csound) {
 
 }}
 
-i_result cxx_compile "score_generator", S_score_generator_code, "-g -v -O2 -fPIC -shared -std=c++14 -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/eigen/3.4.0_1/include -lpthread"
+i_result cxx_compile "score_generator", S_score_generator_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/eigen/3.4.0_1/include -lpthread"
 
 </CsInstruments>
 <CsScore>

@@ -84,7 +84,7 @@ extern "C" {
 
 // For Darwin:
 
-gi_result cxx_compile "csound_main", gS_source_code, "-v -fPIC -shared -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk -std=c++14 -stdlib=libc++ -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -I/opt/homebrew/cellar/llvm/13.0.1/include/c++/v1 -I. -I/opt/homebrew/Cellar/llvm/13.0.1/lib/clang/13.0.1/include -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers", "-lstdc++ -m"
+gi_result cxx_compile "csound_main", gS_source_code, "-v -fPIC -shared -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk -std=c++17 -stdlib=libc++ -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -I/opt/homebrew/cellar/llvm/13.0.1/include/c++/v1 -I. -I/opt/homebrew/Cellar/llvm/13.0.1/lib/clang/13.0.1/include -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers", "-lstdc++ -m"
 
 // For Linux:
 

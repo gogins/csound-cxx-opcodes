@@ -30,7 +30,7 @@
  *
  * ## Syntax
  *```
- * i_result cxx S_unique_entry_point, S_source_code, S_compiler_options
+ * i_result cxx S_unique_entry_point, S_source_code, S_compiler_command
  *
  * The compiler options must be given in the same form as would be used to 
  * compile and link a single C++ file to a Csound plugin opcode.
@@ -38,26 +38,20 @@
  */
 
 #if defined(__APPLE__)
-#include <csdl.h>
-#include <csound.h>
-#include <OpcodeBase.hpp>
 #include <unistd.h>
-#else
+#endif
 #include <csdl.h>
 #include <csound.h>
 #include <OpcodeBase.hpp>
-#endif
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
 #include <memory>
 #include <mutex>
+#include <random>
 #include <stdlib.h>
 #include <string>
 #include <vector>
-#if defined(__WINDOWS__)
-#pragma warning(disable : 4996)
-#include <fileapi.h>
-#endif
 
 
 /**
@@ -111,7 +105,7 @@ public:
     // INPUTS
     STRINGDAT *S_entry_point;
     STRINGDAT *S_source_code;
-    STRINGDAT *S_compiler_options;
+    STRINGDAT *S_compiler_command;
     // STATE
     /**
      * This is an i-time only opcode. Everything happens in init.
@@ -120,7 +114,7 @@ public:
     {
     	cxx_diagnostics_enabled() = false;
         // Parse the compiler options.
-        auto compiler_options = csound->strarg2name(csound, (char *)0, S_compiler_options->data, (char *)"", 1);
+        auto compiler_options = csound->strarg2name(csound, (char *)0, S_compiler_command->data, (char *)"", 1);
         std::vector<const char*> args;
         std::vector<std::string> tokens;
         tokenize(compiler_options, ' ', tokens);
@@ -132,17 +126,18 @@ public:
         }
         //std::fprintf(stderr, "CxxCompile::init: line %d\n", __LINE__);
         auto entry_point = csound->strarg2name(csound, (char *)0, S_entry_point->data, (char *)"", 1);
-        if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_compile: entry_point: %s\n", entry_point);
         // Create a temporary file containing the source code.
         auto source_code = csound->strarg2name(csound, (char *)0, S_source_code->data, (char *)"", 1);
-        const char *temp_directory = std::getenv("TMPDIR");
-        if (temp_directory == nullptr) {
-            temp_directory = "/tmp";
-        }
         char filepath[0x500];
-        std::snprintf(filepath, 0x500, "%s/cxx_opcode_XXXXXX.cpp", temp_directory);
-        auto file_descriptor = mkstemps(filepath, 4);
+        #if 1
+        std::snprintf(filepath, 0x500, "%s/cxx_opcode_XXXXXX.cpp", std::filesystem::temp_directory_path().c_str());
+        auto file_descriptor = mkstemps(filepath,4);
         auto file_ = fdopen(file_descriptor, "w");
+        #else
+        std::mt19937 mersenne_twister;
+        std::snprintf(filepath, 0x500, "%s/cxx_opcode_%x.cpp", std::filesystem::temp_directory_path().c_str(), mersenne_twister());
+        auto file_ = fopen(filepath, "w+");
+        #endif
         std::fwrite(source_code, strlen(source_code), sizeof(source_code[0]), file_);
         std::fclose(file_);
         args.push_back("cxx_opcode");
@@ -150,7 +145,10 @@ public:
         char module_filepath[0x600];
         std::snprintf(module_filepath, 0x600, "%s.so", filepath);
         char command_buffer[0x2000];
-        std::snprintf(command_buffer, 0x2000, "g++ %s %s -o%s\n", filepath, S_compiler_options->data, module_filepath);
+        std::snprintf(command_buffer, 0x2000, "%s %s -o%s\n", S_compiler_command->data, filepath, module_filepath);
+        if (cxx_diagnostics_enabled()) {
+            csound->Message(csound, "####### cxx_compile: command:     %s\n", command_buffer);
+        }
         auto result = std::system(command_buffer);
 	    // Compile the source code to a module, and call its
         // csound_main entry point.
