@@ -79,6 +79,7 @@ jobs:
           dir ${{github.workspace}}/build
           dir ${{github.workspace}}/build/Release
           dir ${{github.workspace}}/build/x64
+          dir ${{github.workspace}}/build/x64/Release
 
       - uses: "marvinpinto/action-automatic-releases@latest"
         if: runner.os == 'macOS'
@@ -118,8 +119,8 @@ jobs:
             LICENSE
             README.md
             *.csd
-            ${{github.workspace}}\build\Release\cxx_opcodes.dll
-            ${{github.workspace}}\build\Debug\cxx_opcodes.dll
+            ${{github.workspace}}\build\x64\Release\cxx_opcodes.dll
+            ${{github.workspace}}\build\x64\Debug\cxx_opcodes.dll
 
 
 
