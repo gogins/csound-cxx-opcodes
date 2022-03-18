@@ -76,6 +76,8 @@ jobs:
           cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
           # Build with CMake.
           cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+          dir ${{github.workspace}}/build
+          dir ${{github.workspace}}/build/Release
 
       - uses: "marvinpinto/action-automatic-releases@latest"
         if: runner.os == 'macOS'
