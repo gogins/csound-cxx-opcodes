@@ -76,11 +76,7 @@ jobs:
           cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
           # Build with CMake.
           cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-          dir ${{github.workspace}}/build
-          dir ${{github.workspace}}/build/Release
-          dir ${{github.workspace}}/build/x64
-          dir ${{github.workspace}}/build/x64/Release
-
+          dir ${{github.workspace}}/**/*.dll
       - uses: "marvinpinto/action-automatic-releases@latest"
         if: runner.os == 'macOS'
         with:
@@ -119,8 +115,8 @@ jobs:
             LICENSE
             README.md
             *.csd
-            ${{github.workspace}}\**\cxx_opcodes.dll
-            ${{github.workspace}}/**/cxx_opcodes.dll
+            ${{github.workspace}}\**\*.dll
+            ${{github.workspace}}/**/*.dll
 
 
 
