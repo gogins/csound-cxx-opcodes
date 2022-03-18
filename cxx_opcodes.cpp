@@ -97,6 +97,11 @@ extern "C" {
     typedef int (*csound_main_t)(CSOUND *csound);
 };
 
+static std::mutex &get_mutex() {
+    static std::mutex mutex_;
+    return mutex_;
+}
+
 class CxxCompile : public csound::OpcodeBase<CxxCompile>
 {
 public:
@@ -129,27 +134,26 @@ public:
         // Create a temporary file containing the source code.
         auto source_code = csound->strarg2name(csound, (char *)0, S_source_code->data, (char *)"", 1);
         char filepath[0x500];
-        #if 1
-        std::snprintf(filepath, 0x500, "%s/cxx_opcode_XXXXXX.cpp", std::filesystem::temp_directory_path().c_str());
-        auto file_descriptor = mkstemps(filepath,4);
-        auto file_ = fdopen(file_descriptor, "w");
-        #else
-        std::mt19937 mersenne_twister;
-        std::snprintf(filepath, 0x500, "%s/cxx_opcode_%x.cpp", std::filesystem::temp_directory_path().c_str(), mersenne_twister());
-        auto file_ = fopen(filepath, "w+");
-        #endif
-        std::fwrite(source_code, strlen(source_code), sizeof(source_code[0]), file_);
-        std::fclose(file_);
+        {
+            std::lock_guard lock(get_mutex());
+            std::mt19937 mersenne_twister;
+            unsigned int seed_ = std::time(nullptr);
+            mersenne_twister.seed(seed_);
+            std::snprintf(filepath, 0x500, "%s/cxx_opcode_%x.cpp", std::filesystem::temp_directory_path().c_str(), mersenne_twister());
+            auto file_ = fopen(filepath, "w+");
+            std::fwrite(source_code, strlen(source_code), sizeof(source_code[0]), file_);
+            std::fclose(file_);
+        }
         args.push_back("cxx_opcode");
         args.push_back(filepath);
         char module_filepath[0x600];
         std::snprintf(module_filepath, 0x600, "%s.so", filepath);
-        char command_buffer[0x2000];
-        std::snprintf(command_buffer, 0x2000, "%s %s -o%s\n", S_compiler_command->data, filepath, module_filepath);
+        char compiler_command[0x2000];
+        std::snprintf(compiler_command, 0x2000, "%s %s -o%s\n", S_compiler_command->data, filepath, module_filepath);
         if (cxx_diagnostics_enabled()) {
-            csound->Message(csound, "####### cxx_compile: command:     %s\n", command_buffer);
+            csound->Message(csound, "####### cxx_compile: command:     %s\n", compiler_command);
         }
-        auto result = std::system(command_buffer);
+        auto result = std::system(compiler_command);
 	    // Compile the source code to a module, and call its
         // csound_main entry point.
         if (result == 0) {
