@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
 
 </CsLicense>
 <CsOptions>
--m0 --opcode-lib="./cxx_opcodes.dylib" -odac
+-m0 --opcode-lib="./libcxx_opcodes.so" -odac
 </CsOptions>
 <CsInstruments>
 
@@ -84,11 +84,13 @@ extern "C" {
 
 // For Darwin:
 
-gi_result cxx_compile "csound_main", gS_source_code, "-v -fPIC -shared -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk -std=c++17 -stdlib=libc++ -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -I/opt/homebrew/cellar/llvm/13.0.1/include/c++/v1 -I. -I/opt/homebrew/Cellar/llvm/13.0.1/lib/clang/13.0.1/include -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers", "-lstdc++ -m"
+gi_result cxx_compile "csound_main", gS_source_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I. -lpthread"
+
 
 // For Linux:
 
-// gi_result cxx_compile "csound_main", gS_source_code, "-v -std=c++17 -isysroot / -I/Users/michaelgogins/clang-opcodes -I/usr/local/include/csound -I.", "/usr/lib/gcc/x86_64-linux-gnu/9/libstdc++.so /usr/lib/gcc/x86_64-linux-gnu/9/libgcc_s.so /usr/lib/x86_64-linux-gnu/libm.so /usr/lib/x86_64-linux-gnu/libpthread.so"
+// gi_result cxx_compile "csound_main", gS_source_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I. -lpthread"
+
 
 instr 1
 prints "******* Trying to invoke Hello...\n"
