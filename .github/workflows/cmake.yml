@@ -41,6 +41,11 @@ jobs:
           echo "Updating all git submodules..."
           git submodule update --init --recursive
           git submodule status --recursive
+          cd csound
+          git branch 
+          git checkout csound6
+          git pull
+          cd ..
           sudo -k
           echo "Finished updating all git submodules."
           echo "Trying to find csdl.h..."
@@ -56,6 +61,11 @@ jobs:
           echo "Updating all git submodules..."
           git submodule update --init --recursive
           git submodule status --recursive
+          cd csound
+          git branch 
+          git checkout csound6
+          git pull
+          cd ..
           sudo -k
           echo "Finished updating all git submodules."
           echo "Trying to find csdl.h..."
