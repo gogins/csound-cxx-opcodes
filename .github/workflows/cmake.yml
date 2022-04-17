@@ -72,6 +72,11 @@ jobs:
           git submodule update --init --recursive
           git submodule status --recursive
           echo "Finished updating all git submodules."
+          cd csound
+          git branch 
+          git checkout csound6
+          git pull
+          cd ..
           # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
           cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
           # Build with CMake.
