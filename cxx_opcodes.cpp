@@ -117,7 +117,7 @@ public:
      */
     int init(CSOUND *csound)
     {
-    	cxx_diagnostics_enabled() = false;
+        cxx_diagnostics_enabled() = false;
         // Parse the compiler options.
         auto compiler_options = csound->strarg2name(csound, (char *)0, S_compiler_command->data, (char *)"", 1);
         std::vector<const char*> args;
@@ -154,7 +154,7 @@ public:
             csound->Message(csound, "####### cxx_compile: command:     %s\n", compiler_command);
         }
         auto result = std::system(compiler_command);
-	    // Compile the source code to a module, and call its
+        // Compile the source code to a module, and call its
         // csound_main entry point.
         if (result == 0) {
             void *module_handle = nullptr;
@@ -215,12 +215,12 @@ public:
         // efficient.
         for (auto module_handle : loaded_modules()) {
             if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::init: library handle:          %p\n", module_handle);
-	        auto invokable_factory = (CxxInvokable *(*)()) csound->GetLibrarySymbol(module_handle, invokable_factory_name);
-	        if (invokable_factory != nullptr) {
+            auto invokable_factory = (CxxInvokable *(*)()) csound->GetLibrarySymbol(module_handle, invokable_factory_name);
+            if (invokable_factory != nullptr) {
                 if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::init: found invokable factory: %p\n", invokable_factory);
                 auto instance = invokable_factory();
-              	if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::init: created new invokable:   %p for thread: %d\n", instance, thread);
-	            cxx_invokable.reset(instance);
+                if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::init: created new invokable:   %p for thread: %d\n", instance, thread);
+                cxx_invokable.reset(instance);
                 if (thread == 2) {
                     return result;
                 }
@@ -248,7 +248,7 @@ public:
         result = cxx_invokable->noteoff(csound);
         if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::noteoff: invokable::noteoff: result: %d\n", result);
         cxx_invokable.reset();
-    	return result;
+        return result;
     }
 };
 

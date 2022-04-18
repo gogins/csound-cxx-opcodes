@@ -492,6 +492,12 @@ S_reverb_code init {{
 
 static bool diagnostics_enabled = true;
 
+// defined in this module to work around `__dso_handle` not being 
+// defined in the C++ startup code. Not applicable on Linux!
+
+void* __dso_handle = (void *)&__dso_handle;
+
+
 /**
  * Adapts the Synthesis Toolkit in C++'s "NRev" class for use directly in Csound.
  */
@@ -568,8 +574,8 @@ extern "C" {
 
 }}
 
-//i_result cxx_compile "reverb_main", S_reverb_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/stk/4.6.2/include -I. -L/opt/homebrew/lib -lstk -lm -lpthread"
-i_result cxx_compile "reverb_main", S_reverb_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -I/usr/local/include -I/usr/local/include/csound -I. -L/usr/local/lib -lstk -lm -lpthread"
+//i_result cxx_compile "reverb_main", S_reverb_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -DUSE_DOUBLE -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/stk/4.6.2/include -I. -L/opt/homebrew/lib -lstk -lm -lpthread"
+i_result cxx_compile "reverb_main", S_reverb_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -DUSE_DOUBLE -I/usr/local/include -I/usr/local/include/csound -I. -L/usr/local/lib -lstk -lm -lpthread"
 
 gk_Reverb_feedback init 2.2
 instr CxxReverb
@@ -580,7 +586,7 @@ arightin inleta "inright"
 aleftout, arightout cxx_invoke "reverb_factory", 3, gk_Reverb_feedback, aleftin, arightin
 outleta "outleft", aleftout
 outleta "outright", arightout
-prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, gk_ZakianFlute_pan, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, 0, active(p1)
 endin
 
 gk_MasterOutput_level init -15
@@ -607,7 +613,7 @@ has_filename:
 prints sprintf("Output filename: %s\n", gS_MasterOutput_filename)
 fout gS_MasterOutput_filename, 18, aleft * i_amplitude_adjustment, aright * i_amplitude_adjustment
 non_has_filename:
-prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, gk_ZakianFlute_pan, active(p1)
+prints "%-24s i %9.4f t %9.4f d %9.4f k %9.4f v %9.4f p %9.4f #%3d\n", nstrstr(p1), p1, p2, p3, p4, p5, 0, active(p1)
 kstatus, kchan, kdata1, kdata2 midiin
 ;printf "          midi in s %4d c %4d %4d %4d\n", kdata2, kstatus, kchan, kdata1, kdata2
 endin
@@ -771,12 +777,11 @@ extern "C" int score_generator(CSOUND *csound) {
 
 }}
 
-//i_result cxx_compile "score_generator", S_score_generator_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/eigen/3.4.0_1/include -lpthread"
-i_result cxx_compile "score_generator", S_score_generator_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -I/usr/local/include/csound -I/usr/include/eigen3 -lpthread"
+//i_result cxx_compile "score_generator", S_score_generator_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -DUSE_DOUBLE -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/eigen/3.4.0_1/include -lpthread"
+i_result cxx_compile "score_generator", S_score_generator_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -DUSE_DOUBLE -I/usr/local/include/csound -I/usr/include/eigen3 -lpthread"
 
 </CsInstruments>
 <CsScore>
-
 f 0 125
 </CsScore>
 </CsoundSynthesizer>

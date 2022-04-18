@@ -1,7 +1,7 @@
 <CsoundSyntheizer>
 <CsLicense>
 
-clang_hello.csd - this file tests the new Clang JIT compiler opcodes for 
+cxx_hello.csd - this file tests the new Clang JIT compiler opcodes for 
 Csound. It does nothing except prove the basics work.
 
 Diagnostics starting with "*******" are from native Csound orchestra code.
@@ -12,12 +12,12 @@ Copyright (C) 2021 by Michael Gogins
 
 This file is part of clang-opcodes.
 
-clang-opcodes is free software; you can redistribute it
+csound-cxx-opcodes is free software; you can redistribute it
 and/or modify it under the terms of the GNU Lesser General Public
 License as published by the Free Software Foundation; either
 version 2.1 of the License, or (at your option) any later version.
 
-clang-opcodes is distributed in the hope that it will be useful,
+csound-cxx-opcodes is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU Lesser General Public License for more details.
@@ -45,9 +45,9 @@ gS_source_code = {{
 #include <vector>
 
 // defined in this module to work around `__dso_handle` not being 
-// defined in the C++ startup code.
+// defined in the C++ startup code. Not applicable on Linux!
 
-void* __dso_handle = (void *)&__dso_handle;
+// void* __dso_handle = (void *)&__dso_handle;
 
 extern "C" int csound_main(CSOUND *csound) {
     csound->Message(csound, ">>>>>>> Hello, world! This proves csound_main has been called with csound: %p.\\n", csound);
@@ -84,18 +84,18 @@ extern "C" {
 
 // For Darwin:
 
-gi_result cxx_compile "csound_main", gS_source_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I. -lpthread"
+// gi_result cxx_compile "csound_main", gS_source_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I. -lpthread"
 
 
 // For Linux:
 
-// gi_result cxx_compile "csound_main", gS_source_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I. -lpthread"
+gi_result cxx_compile "csound_main", gS_source_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -I/usr/local/include -I/usr/local/include/csound  -I. -lpthread"
 
 
 instr 1
 prints "******* Trying to invoke Hello...\n"
 S_message, i_number cxx_invoke "hello_factory", 1, 2
-prints "******* clang_invoke returned: \"%s\" and %d\n", S_message, i_number
+prints "******* cxx_invoke returned: \"%s\" and %d\n", S_message, i_number
 endin
 
 </CsInstruments>
