@@ -1,0 +1,40 @@
+{
+  "name": "cxx",
+  "version": "1.2.0",
+  "opcodes": [
+    "cxx_compile",
+    "cxx_invoke"
+  ],
+  "short_description": "Csound embeds and runs C++ code",
+  "long_description": "These are a set of Csound opcodes that enable C++ code embedded in a Csound orchestra to be compiled, linked, loaded, and executed during the Csound performance, including user-defined opcodes.",
+  "csound_version": "6.17",
+  "author": "Michael Gogins",
+  "email": "michael.gogins@gmail.com",
+  "license": "LGPLv2",
+  "repository": "https://github.com/gogins/csound-cxx-opcodes.git",
+  "binaries": {
+    "linux": {
+      "url": "https://github.com/gogins/csound-cxx-opcodes.gitreleases/download/linux-latest/csound-webserver-opcodes-1.3.0-Linux.zip",
+      "extractpath": "lib/csound/plugins64-6.0/libcsound_webserver.so",
+      "build_platform": "Unknown"
+    },
+    "windows": {
+      "url": "https://github.com/gogins/csound-cxx-opcodes/releases/tag/v1.2.0-windows",
+      "extractpath": "bin/libcsound_webserver.dll",
+      "build_platform": "Unknown"
+    },
+    "macos": {
+      "url": "https://github.com/gogins/csound-webserver-opcodes/releases/download/macos-latest/csound-webserver-opcodes-1.3.0-Darwin.zip",
+      "extractpath": "lib/csound/plugins64-6.0/libcsound_webserver.dylib",
+      "build_platform": "Unknown"
+    }
+  },
+  "assets": [
+    {
+      "name": "share",
+      "platform": "linux",
+      "url": "https://github.com/gogins/csound-webserver-opcodes/releases/download/linux-latest/csound-webserver-opcodes-1.3.0-Linux.zip",
+      "extractpath": "share"
+    }
+  ]
+}
