@@ -38,6 +38,10 @@ jobs:
       - name: Build on Mac OS
         if: runner.os == 'macOS'
         run: |
+          echo "Installing tools..."
+          brew update
+          brew install graphviz
+          brew install doxygen
           echo "Updating all git submodules..."
           git submodule update --init --recursive
           git submodule status --recursive
@@ -54,10 +58,19 @@ jobs:
           cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
           # Build with CMake.
           cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+          echo "Documenting..."
+          doxygen
+          echo "Packaging..."
+          cd build
+          cpack -V
           
       - name: Build on Linux
         if: runner.os == 'Linux'
         run: |
+          echo "Installing tools..."
+          sudo apt-get update
+          sudo apt-get install graphviz
+          sudo apt-get install doxygen
           echo "Updating all git submodules..."
           git submodule update --init --recursive
           git submodule status --recursive
@@ -74,10 +87,20 @@ jobs:
           cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
           # Build with CMake.
           cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+          echo "Documenting..."
+          doxygen
+          echo "Packaging..."
+          cd build
+          cpack -V
         
       - name: Build on Windows
         if: runner.os == 'Windows'
         run: |
+          echo "Installing tools..."
+          choco install graphviz -y
+          choco install doxygen.install -y
+          dir C:\"Program Files"\doxygen
+          refreshenv
           echo "Updating all git submodules..."
           git submodule update --init --recursive
           git submodule status --recursive
@@ -92,6 +115,11 @@ jobs:
           # Build with CMake.
           cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
           dir ${{github.workspace}}/build/Release
+          echo "Documenting..."
+          doxygen
+          echo "Packaging..."
+          cd build
+          cpack -V
           
       - uses: "marvinpinto/action-automatic-releases@latest"
         if: runner.os == 'macOS'
@@ -103,9 +131,7 @@ jobs:
           files: |
             LICENSE
             README.md
-            *.csd
-            ${{github.workspace}}/build/*.dylib
-            ${{github.workspace}}/build/*.so
+            ${{github.workspace}}/build/*.zip
 
       - uses: "marvinpinto/action-automatic-releases@latest"
         if: runner.os == 'Linux'
@@ -117,8 +143,7 @@ jobs:
           files: |
             LICENSE
             README.md
-            *.csd
-            ${{github.workspace}}/build/*.so
+            ${{github.workspace}}/build/*.zip
            
       - uses: "marvinpinto/action-automatic-releases@latest"
         if: runner.os == 'Windows'
@@ -130,8 +155,7 @@ jobs:
           files: |
             LICENSE
             README.md
-            *.csd
-            build/Release/cxx_opcodes.dll
+            ${{github.workspace}}/build/*.zip
 
 
 
