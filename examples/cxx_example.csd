@@ -11,7 +11,7 @@ Arranged for Csound by Michael Gogins
 sr = 48000
 ksmps = 128
 nchnls = 2
-0dbfs = 10
+0dbfs = 5
 
 gi_ampmidicurve_dynamic_range init .375
 gi_ampmidicurve_exponent init 5
@@ -574,8 +574,8 @@ extern "C" {
 
 }}
 
-//i_result cxx_compile "reverb_main", S_reverb_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -DUSE_DOUBLE -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/stk/4.6.2/include -I. -L/opt/homebrew/lib -lstk -lm -lpthread"
-i_result cxx_compile "reverb_main", S_reverb_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -DUSE_DOUBLE -I/usr/local/include -I/usr/local/include/csound -I. -L/usr/local/lib -lstk -lm -lpthread"
+i_result cxx_compile "reverb_main", S_reverb_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -DUSE_DOUBLE -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/stk/4.6.2/include -I. -L/opt/homebrew/lib -lstk -lm -lpthread"
+//i_result cxx_compile "reverb_main", S_reverb_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -DUSE_DOUBLE -I/usr/local/include -I/usr/local/include/csound -I. -L/usr/local/lib -lstk -lm -lpthread"
 
 gk_Reverb_feedback init 2.2
 instr CxxReverb
@@ -777,8 +777,8 @@ extern "C" int score_generator(CSOUND *csound) {
 
 }}
 
-//i_result cxx_compile "score_generator", S_score_generator_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -DUSE_DOUBLE -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/eigen/3.4.0_1/include -lpthread"
-i_result cxx_compile "score_generator", S_score_generator_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -DUSE_DOUBLE -I/usr/local/include/csound -I/usr/include/eigen3 -lpthread"
+i_result cxx_compile "score_generator", S_score_generator_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -DUSE_DOUBLE -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/eigen/3.4.0_1/include -lpthread"
+//i_result cxx_compile "score_generator", S_score_generator_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -DUSE_DOUBLE -I/usr/local/include/csound -I/usr/include/eigen3 -lpthread"
 
 </CsInstruments>
 <CsScore>

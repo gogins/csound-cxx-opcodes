@@ -84,12 +84,12 @@ extern "C" {
 
 // For Darwin:
 
-// gi_result cxx_compile "csound_main", gS_source_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I. -lpthread"
+gi_result cxx_compile "csound_main", gS_source_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I. -lpthread"
 
 
 // For Linux:
 
-gi_result cxx_compile "csound_main", gS_source_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -I/usr/local/include -I/usr/local/include/csound  -I. -lpthread"
+//gi_result cxx_compile "csound_main", gS_source_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -I/usr/local/include -I/usr/local/include/csound  -I. -lpthread"
 
 
 instr 1
