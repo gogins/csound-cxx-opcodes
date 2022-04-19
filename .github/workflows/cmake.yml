@@ -116,10 +116,11 @@ jobs:
           cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
           dir ${{github.workspace}}/build/Release
           echo "Documenting..."
-          doxygen
+          C:\"Program Files"\doxygen\bin\doxygen
           echo "Packaging..."
           cd build
           cpack -V
+          dir 
           
       - uses: "marvinpinto/action-automatic-releases@latest"
         if: runner.os == 'macOS'
