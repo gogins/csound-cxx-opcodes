@@ -30,9 +30,9 @@ system and an installed C++ toolchain to execute a C++ compilation. The
 resulting dynamic link libraries are then loaded by Csound and symbols in them 
 can be invoked by Csound.
 
-@@include[cxx_compile.md](cxx_compile.md)
+@@include[cxx_compile.md](doc/cxx_compile.md)
 
-@@include[cxx_invoke.md](cxx_invoke.md)
+@@include[cxx_invoke.md](doc/cxx_invoke.md)
 
 # Installation
 
