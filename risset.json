@@ -24,7 +24,7 @@
       "build_platform": "Unknown"
     },
     "macos": {
-      "url": "https://github.com/gogins/csound-webserver-opcodes/releases/download/macos-latest/csound-cxx-opcodes-1.2.0-Darwin.zip",
+      "url": "https://github.com/gogins/csound-cxx-opcodes/releases/download/macos-latest/csound-cxx-opcodes-1.2.0-Darwin.zip",
       "extractpath": "lib/csound/plugins64-6.0/libcsound_cxx.dylib",
       "build_platform": "Unknown"
     }
@@ -33,7 +33,7 @@
     {
       "name": "share",
       "platform": "linux",
-      "url": "https://github.com/gogins/csound-webserver-opcodes/releases/download/linux-latest/csound-cxx-opcodes-1.2.0-Linux.zip",
+      "url": "https://github.com/gogins/csound-cxx-opcodes/releases/download/linux-latest/csound-cxx-opcodes-1.2.0-Linux.zip",
       "extractpath": "share"
     }
   ]
