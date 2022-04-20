@@ -131,7 +131,7 @@ jobs:
           title: "Mac OS Development Release"
           files: |
             LICENSE
-            README.md
+            doc/README.md
             ${{github.workspace}}/build/*.zip
 
       - uses: "marvinpinto/action-automatic-releases@latest"
@@ -143,7 +143,7 @@ jobs:
           title: "Linux Development Release"
           files: |
             LICENSE
-            README.md
+            doc/README.md
             ${{github.workspace}}/build/*.zip
            
       - uses: "marvinpinto/action-automatic-releases@latest"
@@ -155,7 +155,7 @@ jobs:
           title: "Windows Development Release"
           files: |
             LICENSE
-            README.md
+            doc/README.md
             build/*.zip
 
 

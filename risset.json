@@ -12,6 +12,7 @@
   "email": "michael.gogins@gmail.com",
   "license": "LGPLv2",
   "repository": "https://github.com/gogins/csound-cxx-opcodes.git",
+  "doc_folder": "doc",
   "binaries": {
     "linux": {
       "url": "https://github.com/gogins/csound-cxx-opcodes.gitreleases/download/linux-latest/csound-cxx-opcodes-1.2.0-Linux.zip",
