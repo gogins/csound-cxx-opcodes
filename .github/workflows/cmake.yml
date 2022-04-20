@@ -156,7 +156,7 @@ jobs:
           files: |
             LICENSE
             README.md
-            ${{github.workspace}}\build\csound-cxx-opcodes-1.2.0-win64.zip
+            build/*.zip
 
 
 
