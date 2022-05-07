@@ -76,7 +76,7 @@ PUBLIC bool &cxx_diagnostics_enabled() {
 static void *cxx_load_library(const char *library_name) {
     void *library_handle = nullptr;
 #if defined(WIN32)
-    library_handle = (void*) LoadLibrary(libraryPath);
+    library_handle = (void*) LoadLibrary(library_name);
     return library_handle;
 #endif
 #if (defined(__APPLE__) || defined(__linux__) || defined(__unix__) || defined(_POSIX_VERSION))
