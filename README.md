@@ -19,7 +19,7 @@ The `cxx_compile` opcode compiles C++ source, embedded in a Csound
 orchestra, into a dynamic link library, and executes its entry point at init 
 time.
 
-The `cxx_invoke` opcode enables an opcode-like invocable interface to be 
+The `cxx_invoke` opcode implements an opcode-like invocable interface to be 
 created and called during the Csound performance, either at init time, or 
 at k-rate. Commonly, this is used to implement new Csound opcodes directly in 
 C++ from the Csound orchestra. It is also used to generate scores or control 
@@ -27,7 +27,7 @@ channel values at the beginning of, or during, the performance.
 
 These opcodes do not embed the C++ compiler, but rather use the operating 
 system and an installed C++ toolchain to execute a C++ compilation. The 
-resulting dynamic link libraries are then loaded by Csound and symbols in them 
+resulting dynamic link libraries are then loaded by Csound, and symbols in them 
 can be invoked by Csound.
 
 # cxx_compile
@@ -45,7 +45,7 @@ and has access to the running instance of Csound.
 
 ## Syntax
 ```
-i_result cxx_compile S_entry_point, S_source_code, S_compiler_command
+i_result cxx_compile S_entry_point, S_source_code, S_compiler_command [, S_dynamic_link_libraries]_
 ```
 ## Initialization
 
@@ -72,6 +72,12 @@ source code filename and the output filename must not be specified.
 
 *i_result* - 0 if the code has been compiled and executed succesfully; 
 non-0 if there is an error. Toolchain diagnostics are printed to stderr.
+
+*S_dynamic_link_libraries* - A space-delimited list of dynamic link libraries 
+upon which the compiled code depends, and which therefore must be preloaded. 
+These libraries must be complete filenames (i.e., not `-lmylib` but 
+`libMylibso`), searched for in the standard locations, or can be given as 
+complete filepaths to be loaded unconditionally.
 
 ## Performance
 
@@ -103,8 +109,9 @@ a C program, with the following signature:
 ```
 extern "C" int(*)(CSOUND *csound);
 ```
-Once the `cxx_compile` opcode has compiled, linked, and loaded the module, 
-Csound immediately calls the entry point function in that module. 
+Once the `cxx_compile` opcode has preloaded any dependent libraries, and then 
+compiled, linked, and loaded the module, Csound immediately calls the entry
+point function in that module. 
 
 The entry point function may call any Csound API functions that are members of 
 the `CSOUND` struct, define classes and structs, call any public symbol in any 

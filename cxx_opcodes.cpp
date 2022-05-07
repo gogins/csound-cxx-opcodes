@@ -45,6 +45,9 @@
 #include <OpcodeBase.hpp>
 #include <cstdio>
 #include <cstdlib>
+#if (defined(__linux__) || defined(__unix__) || defined(_POSIX_VERSION))
+#include <dlfcn.h>
+#endif
 #include <filesystem>
 #include <memory>
 #include <mutex>
@@ -52,7 +55,9 @@
 #include <stdlib.h>
 #include <string>
 #include <vector>
-
+#if defined(WIN32)
+#include <windows.h>
+#endif
 
 /**
  * Diagnostics are global for all these opcodes, and also for 
@@ -61,6 +66,24 @@
 PUBLIC bool &cxx_diagnostics_enabled() {
     static bool enabled = false;
     return enabled;
+}
+
+/**
+ * Cross-platform facility for loading shared libraries upon which embedded 
+ * code will depend. Such dependencies must be pre-loaded in global scope.
+ * This is needed because csoundOpenLibrary does NOT load in global scope.
+ */
+static void *cxx_load_library(const char *library_name) {
+    void *library_handle = nullptr;
+#if defined(WIN32)
+    library_handle = (void*) LoadLibrary(libraryPath);
+    return library_handle;
+#endif
+#if (defined(__APPLE__) || defined(__linux__) || defined(__unix__) || defined(_POSIX_VERSION))
+    library_handle = dlopen(library_name, RTLD_NOW | RTLD_GLOBAL);
+    return library_handle;
+#endif
+    return library_handle;
 }
 
 static void tokenize(std::string const &string_, const char delimiter, std::vector<std::string> &tokens) {
@@ -110,7 +133,11 @@ public:
     // INPUTS
     STRINGDAT *S_entry_point;
     STRINGDAT *S_source_code;
+    // Compiler name and all compiler options except for source code filename,
+    // output name, and dynamic link libraries.
     STRINGDAT *S_compiler_command;
+    // All dynamic link libraries required by the compiler command.
+    STRINGDAT *S_dynamic_link_libraries;
     // STATE
     /**
      * This is an i-time only opcode. Everything happens in init.
@@ -119,10 +146,10 @@ public:
     {
         cxx_diagnostics_enabled() = false;
         // Parse the compiler options.
-        auto compiler_options = csound->strarg2name(csound, (char *)0, S_compiler_command->data, (char *)"", 1);
+        auto cxx_command = csound->strarg2name(csound, (char *)0, S_compiler_command->data, (char *)"", 1);
         std::vector<const char*> args;
         std::vector<std::string> tokens;
-        tokenize(compiler_options, ' ', tokens);
+        tokenize(cxx_command, ' ', tokens);
         for (int i = 0; i < tokens.size(); ++i) {
             if (tokens[i] == "-v") {
                 cxx_diagnostics_enabled() = true;
@@ -139,7 +166,7 @@ public:
             std::mt19937 mersenne_twister;
             unsigned int seed_ = std::time(nullptr);
             mersenne_twister.seed(seed_);
-            std::snprintf(filepath, 0x500, "%s/cxx_opcode_%x.cpp", std::filesystem::temp_directory_path().c_str(), mersenne_twister());
+            std::snprintf(filepath, 0x500, "%s/cxx_opcode_%lx.cpp", std::filesystem::temp_directory_path().c_str(), mersenne_twister());
             auto file_ = fopen(filepath, "w+");
             std::fwrite(source_code, strlen(source_code), sizeof(source_code[0]), file_);
             std::fclose(file_);
@@ -150,22 +177,54 @@ public:
         std::snprintf(module_filepath, 0x600, "%s.so", filepath);
         char compiler_command[0x2000];
         std::snprintf(compiler_command, 0x2000, "%s %s -o%s\n", S_compiler_command->data, filepath, module_filepath);
-        if (cxx_diagnostics_enabled()) {
-            csound->Message(csound, "####### cxx_compile: command:     %s\n", compiler_command);
+        if (cxx_diagnostics_enabled()) {    
+            csound->Message(csound, "####### cxx_compile: command:            %s\n", compiler_command);
         }
         auto result = std::system(compiler_command);
+        if (cxx_diagnostics_enabled()) {
+            csound->Message(csound, "####### cxx_compile: result:             %d\n", result);
+        }
         // Compile the source code to a module, and call its
         // csound_main entry point.
         if (result == 0) {
+            // First, preload dynamic link libraries required by our compiled 
+            // module.
+            if (S_dynamic_link_libraries != nullptr) {
+                std::vector<std::string> dynamic_link_library_names;
+                auto dynamic_link_libraries = csound->strarg2name(csound, (char *)0, S_dynamic_link_libraries->data, (char *)"", 1);
+                tokenize(dynamic_link_libraries, ' ', dynamic_link_library_names);
+                for (const auto &dynamic_link_library_name : dynamic_link_library_names) {
+                    void *module_handle = nullptr;
+                    auto library_result = cxx_load_library(dynamic_link_library_name.c_str());
+#if (defined(__linux__) || defined(__unix__) || defined(_POSIX_VERSION)) 
+                    if (result != OK) {
+                            auto error_message = dlerror();
+                            csound->Message(csound, "Error: dlerror: \"%s\" when trying to load %s\n", error_message, dynamic_link_library_name.c_str());
+                    }
+#endif
+                    if (cxx_diagnostics_enabled() && library_result != nullptr) {
+                        csound->Message(csound, "####### cxx_compile: loaded dependency:  %s\n", dynamic_link_library_name.c_str());
+                    }
+                }
+            }
+            // Then, load our compiled module.
             void *module_handle = nullptr;
-            result = csound->OpenLibrary(&module_handle, module_filepath);
+            ///result = csound->OpenLibrary(&module_handle, module_filepath);
+            module_handle = cxx_load_library(module_filepath);
+#if (defined(__linux__) || defined(__unix__) || defined(_POSIX_VERSION)) 
+            ///if (result != OK) {
+            if (module_handle == nullptr) {
+                    auto error_message = dlerror();
+                    csound->Message(csound, "Error: dlerror: %s\n", error_message);
+            }
+#endif
             loaded_modules().push_back(module_handle);
             csound_main_t entry_point_symbol = (csound_main_t) csound->GetLibrarySymbol(module_handle, entry_point);
             if (cxx_diagnostics_enabled()) {
-                csound->Message(csound, "####### cxx_compile: loading:      %s\n", module_filepath);
-                csound->Message(csound, "####### cxx_compile: handle:       %p\n", module_handle);
-                csound->Message(csound, "####### cxx_compile: entry point:  %s\n", entry_point);
-                csound->Message(csound, "####### cxx_compile: symbol:       %p\n", entry_point_symbol);
+                csound->Message(csound, "####### cxx_compile: module_filepath:    %s\n", module_filepath);
+                csound->Message(csound, "####### cxx_compile: module_handle:      %p\n", module_handle);
+                csound->Message(csound, "####### cxx_compile: entry_point:        %s\n", entry_point);
+                csound->Message(csound, "####### cxx_compile: entry_point_symbol: %p\n", entry_point_symbol);
             }
             result = entry_point_symbol(csound);
         }

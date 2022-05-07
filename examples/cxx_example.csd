@@ -495,7 +495,7 @@ static bool diagnostics_enabled = true;
 // defined in this module to work around `__dso_handle` not being 
 // defined in the C++ startup code. Not applicable on Linux!
 
-void* __dso_handle = (void *)&__dso_handle;
+//void* __dso_handle = (void *)&__dso_handle;
 
 
 /**
@@ -507,7 +507,7 @@ void* __dso_handle = (void *)&__dso_handle;
 #include <cstdio>
 
 // Csound's PI conflicts with the STK's PI.
-//#undef PI
+#undef PI
 
 class InvokableReverb : public CxxInvokableBase {
     // Monophonic input, stereophonic outout. So, we use two of them to get stereo in, stereo out.
@@ -574,8 +574,11 @@ extern "C" {
 
 }}
 
-i_result cxx_compile "reverb_main", S_reverb_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -DUSE_DOUBLE -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/stk/4.6.2/include -I. -L/opt/homebrew/lib -lstk -lm -lpthread"
-//i_result cxx_compile "reverb_main", S_reverb_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -DUSE_DOUBLE -I/usr/local/include -I/usr/local/include/csound -I. -L/usr/local/lib -lstk -lm -lpthread"
+// Darwin:
+//i_result cxx_compile "reverb_main", S_reverb_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -DUSE_DOUBLE -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/stk/4.6.2/include -I. -L/opt/homebrew/lib -lm -lpthread", "libstk.dylib"
+// Linux:
+
+i_result cxx_compile "reverb_main", S_reverb_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -I/usr/local/include -I/usr/local/include/csound -I. -L/usr/lib -L/usr/local/lib -L/usr/lib/gcc/x86_64-linux-gnu/9 -L/home/mkg/csound-cxx-opcodes/examples -lm -lpthread", "libstk.so"
 
 gk_Reverb_feedback init 2.2
 instr CxxReverb
@@ -777,8 +780,12 @@ extern "C" int score_generator(CSOUND *csound) {
 
 }}
 
-i_result cxx_compile "score_generator", S_score_generator_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -DUSE_DOUBLE -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/eigen/3.4.0_1/include -lpthread"
-//i_result cxx_compile "score_generator", S_score_generator_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -DUSE_DOUBLE -I/usr/local/include/csound -I/usr/include/eigen3 -lpthread"
+// gi_result cxx_compile "csound_main", gS_source_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -I/usr/local/include -I/usr/local/include/csound  -I. -lpthread"
+
+
+//i_result cxx_compile "score_generator", S_score_generator_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -DUSE_DOUBLE -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/eigen/3.4.0_1/include -lpthread -lm -L/home/mkg/cxx-opcodes/examples -lstk"
+
+i_result cxx_compile "score_generator", S_score_generator_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -I/usr/local/include/csound -I/usr/include/eigen3 -lpthread -lm -lstk"
 
 </CsInstruments>
 <CsScore>
