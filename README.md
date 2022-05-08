@@ -45,7 +45,7 @@ and has access to the running instance of Csound.
 
 ## Syntax
 ```
-i_result cxx_compile S_entry_point, S_source_code, S_compiler_command [, S_dynamic_link_libraries]_
+i_result cxx_compile S_entry_point, S_source_code, S_compiler_command [, S_dynamic_link_libraries]
 ```
 ## Initialization
 
