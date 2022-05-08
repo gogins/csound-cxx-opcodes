@@ -75,8 +75,8 @@ non-0 if there is an error. Toolchain diagnostics are printed to stderr.
 
 *S_dynamic_link_libraries* - A space-delimited list of dynamic link libraries 
 upon which the compiled code depends, and which therefore must be preloaded. 
-These libraries must be complete filenames (i.e., not `-lmylib` but 
-`libMylibso`), searched for in the standard locations, or can be given as 
+These libraries must be complete filenames (e.g., not `-lmylib`, but 
+`libMylib.so`), searched for in the standard locations, or can be given as 
 complete filepaths to be loaded unconditionally.
 
 ## Performance
