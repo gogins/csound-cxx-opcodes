@@ -15,6 +15,14 @@ int main()
     macros += "_WIN32 ";
     platform = "Windows";
 #endif
+#ifdef __DARWIN__
+    macros += "__DARWIN__ ";
+    platform = "macOS";
+#endif
+#ifdef __MACH__
+    macros += "__MACH__ ";
+    platform = "macOS";
+#endif
 #ifdef __APPLE__
     macros += "__APPLE__ ";
     platform = "macOS";
