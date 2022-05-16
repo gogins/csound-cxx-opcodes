@@ -574,11 +574,14 @@ extern "C" {
 
 }}
 
-// Darwin:
-//i_result cxx_compile "reverb_main", S_reverb_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -DUSE_DOUBLE -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/stk/4.6.2/include -I. -L/opt/homebrew/lib -lm -lpthread", "libstk.dylib"
-// Linux:
+gS_os, gS_macros cxx_os
 
+if strcmp(gS_os, "macOS") == 0 then
+i_result cxx_compile "reverb_main", S_reverb_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -DUSE_DOUBLE -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/stk/4.6.2/include -I. -L/opt/homebrew/lib -lm -lpthread", "libstk.dylib"
+endif
+if strcmp(gS_os, "Linux") == 0 then
 i_result cxx_compile "reverb_main", S_reverb_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -I/usr/local/include -I/usr/local/include/csound -I. -L/usr/lib -L/usr/local/lib -L/usr/lib/gcc/x86_64-linux-gnu/9 -L/home/mkg/csound-cxx-opcodes/examples -lm -lpthread", "libstk.so"
+endif
 
 gk_Reverb_feedback init 2.2
 instr CxxReverb
@@ -780,12 +783,12 @@ extern "C" int score_generator(CSOUND *csound) {
 
 }}
 
-// gi_result cxx_compile "csound_main", gS_source_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -I/usr/local/include -I/usr/local/include/csound  -I. -lpthread"
-
-
-//i_result cxx_compile "score_generator", S_score_generator_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -DUSE_DOUBLE -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/eigen/3.4.0_1/include -lpthread -lm -L/home/mkg/cxx-opcodes/examples -lstk"
-
+if strcmp(gS_os, "macOS") == 0 then
+i_result cxx_compile "score_generator", S_score_generator_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -DUSE_DOUBLE -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/eigen/3.4.0_1/include -lpthread -lm -L/home/mkg/cxx-opcodes/examples -lstk"
+endif
+if strcmp(gS_os, "Linux") == 0 then
 i_result cxx_compile "score_generator", S_score_generator_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -I/usr/local/include/csound -I/usr/include/eigen3 -lpthread -lm -lstk"
+endif
 
 </CsInstruments>
 <CsScore>
