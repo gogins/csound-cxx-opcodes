@@ -128,12 +128,33 @@ code into classes that can perform the work of Csound opcodes. This is
 done by implementing the `CxxInvokable` interface. See `cxx_invoke` for how 
 this works and how to use it.
 
+# cxx_os
+
+`cxx_os` - Returns two strings, the first identifying the operating system 
+targeted by the compiler, and the second listing the compiler macros that 
+were defined by the compiler.
+
+## Description
+
+The `cxx_os` opcode returns two strings, the first identifying the operating 
+system targeted by the compiler, and the second listing the compiler macros 
+that are defined by the compiler. This can be used for conditionally executing 
+different code in the Csound orchestra depending on the operating system. 
+That, in turn, can be used to write orchestras that work without modification 
+on different operating systems.
+
+## Syntax
+```
+S_os, S_macros cxx_os
+```
+
 ## Example
 
-The `cxx_hello.csd` file uses the `cxx_compile` opcode to demonstrate and 
-test the basic funtionality of the `cxx_compile` and `cxx_invoke` opcodes. 
-This is a bare bones test that does just enough to prove that things are 
-working, and no more.
+The `cxx_hello.csd` file uses the `cxx_os` opcode to print the operating 
+system name and a list of compiler macros that identify the operating system.
+
+The operating system name in turn is used to execute an appropriate compiler 
+command for that operating system.
 
 # Installation
 

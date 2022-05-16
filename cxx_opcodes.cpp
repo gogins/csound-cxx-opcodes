@@ -311,11 +311,100 @@ public:
     }
 };
 
-class CxxPlatform : public csound::OpcodeBase<CxxPlatform>
+std::vector<std::string> get_operating_system() {
+    std::string operating_system = "Unidentified operating system.";
+    std::string macros;
+#ifdef _WIN32
+    macros += "_WIN32 ";
+    operating_system = "Windows";
+#endif
+#ifdef __DARWIN__
+    macros += "__DARWIN__ ";
+    operating_system = "macOS";
+#endif
+#ifdef __MACH__
+    macros += "__MACH__ ";
+    operating_system = "macOS";
+#endif
+#ifdef __APPLE__
+    macros += "__APPLE__ ";
+    operating_system = "macOS";
+#endif
+#ifdef __linux__
+    macros += "__linux__ ";
+    operating_system = "Linux";
+#endif
+#ifdef TARGET_OS_EMBEDDED
+    macros += "TARGET_OS_EMBEDDED ";
+    operating_system = "iOS";
+#endif
+#ifdef TARGET_IPHONE_SIMULATOR
+    macros += "TARGET_IPHONE_SIMULATOR ";
+    operating_system = "iOS";
+#endif
+#ifdef TARGET_OS_IPHONE
+    macros += "TARGET_OS_IPHONE ";
+    operating_system = "iOS";
+#endif
+#ifdef TARGET_OS_MAC
+    macros += "TARGET_OS_MAC ";
+    operating_system = "macOS";
+#endif
+#ifdef __ANDROID__
+    macros += "__ANDROID__ ";
+    operating_system = "Android";
+#endif
+#ifdef __unix__
+    macros += "__unix__ ";
+    //operating_system = "Unix";
+#endif
+#ifdef _POSIX_VERSION
+    macros += "_POSIX_VERSION ";
+    //operating_system = "POSIX";
+#endif
+#ifdef __sun
+    macros += "__sun ";
+    operating_system = "Solaris";
+#endif
+#ifdef __hpux
+    macros += "__hpux ";
+    operating_system = "HP_UX";
+#endif
+#ifdef BSD
+    macros += "BSD ";
+    operating_system = "BSD";
+#endif
+#ifdef __DragonFly__
+    macros += "__DragonFly__ ";
+    operating_system = "BSD";
+#endif
+#ifdef __FreeBSD__
+    macros += "__FreeBSD__ ";
+    operating_system = "BSD";
+#endif
+#ifdef __NetBSD__
+    macros += "__NetBSD__ ";
+    operating_system = "BSD";
+#endif
+#ifdef __OpenBSD__
+    macros += "__OpenBSD__ ";
+    operating_system = "BSD";
+#endif
+    return {operating_system, macros};
+}
+
+//extern "C" char *cs_strdup(CSOUND *, const char *);
+
+/**
+ * Returns a stringified list of any compiler macros that identify the 
+ * operating system, plus a generic name for the operating system.
+ */
+class CxxOperatingSystem : public csound::OpcodeBase<CxxOperatingSystem>
 {
 public:
     // OUTPUTS
-    STRINGDAT *S_platform_name;
+    STRINGDAT *S_operating_system;
+    STRINGDAT *S_macros;
     // INPUTS
     // STATE
     /**
@@ -324,7 +413,11 @@ public:
     int init(CSOUND *csound)
     {
         int result = OK;
-        
+        auto results = get_operating_system();
+        S_operating_system->data = csound->Strdup(csound, results[0].data());
+        S_operating_system->size = std::strlen(S_operating_system->data);
+        S_macros->data = csound->Strdup(csound, results[1].data());
+        S_macros->size = std::strlen(S_operating_system->data);
         return result;
     };
 };
@@ -355,13 +448,13 @@ extern "C" {
                                           (int (*)(CSOUND*,void*)) CxxInvoke::kontrol_,
                                           (int (*)(CSOUND*,void*)) 0);
         status += csound->AppendOpcode(csound,
-                                          (char *)"cxx_platform",
-                                          sizeof(CxxPlatform),
+                                          (char *)"cxx_os",
+                                          sizeof(CxxOperatingSystem),
                                           0,
                                           1,
-                                          (char *)"S",
+                                          (char *)"SS",
                                           (char *)"",
-                                          (int (*)(CSOUND*,void*)) CxxPlatform::init_,
+                                          (int (*)(CSOUND*,void*)) CxxOperatingSystem::init_,
                                           (int (*)(CSOUND*,void*)) 0,
                                           (int (*)(CSOUND*,void*)) 0);
         return status;

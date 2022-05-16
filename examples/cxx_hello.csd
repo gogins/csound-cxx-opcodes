@@ -33,6 +33,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
 </CsOptions>
 <CsInstruments>
 
+gS_os, gS_macros cxx_os
+
+prints "******* operating system: %s\n", gS_os
+prints "******* macros defined by compiler: %s\n", gS_macros
 prints "******* I'm about to try compiling a simple test C++ module....\n"
 
 gS_source_code = {{
@@ -82,15 +86,13 @@ extern "C" {
 
 }}
 
-// For Darwin:
+if strcmp(gS_os, "macOS") == 0 then
+gi_result cxx_compile "csound_main", gS_source_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I. -lpthread"
+endif
 
-// gi_result cxx_compile "csound_main", gS_source_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I. -lpthread"
-
-
-// For Linux:
-
+if strcmp(gS_os, "Linux") == 0 then
 gi_result cxx_compile "csound_main", gS_source_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -I/usr/local/include -I/usr/local/include/csound  -I. -lpthread"
-
+endif
 
 instr 1
 prints "******* Trying to invoke Hello...\n"
