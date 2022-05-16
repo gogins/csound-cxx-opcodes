@@ -311,6 +311,25 @@ public:
     }
 };
 
+class CxxPlatform : public csound::OpcodeBase<CxxPlatform>
+{
+public:
+    // OUTPUTS
+    STRINGDAT *S_platform_name;
+    // INPUTS
+    // STATE
+    /**
+     * This is an i-time only opcode. Everything happens in init.
+     */
+    int init(CSOUND *csound)
+    {
+        int result = OK;
+        
+        return result;
+    };
+};
+
+
 extern "C" {
 
     PUBLIC int csoundModuleInit_cxx_opcodes(CSOUND *csound)
@@ -334,6 +353,16 @@ extern "C" {
                                           (char *)"SkN",
                                           (int (*)(CSOUND*,void*)) CxxInvoke::init_,
                                           (int (*)(CSOUND*,void*)) CxxInvoke::kontrol_,
+                                          (int (*)(CSOUND*,void*)) 0);
+        status += csound->AppendOpcode(csound,
+                                          (char *)"cxx_platform",
+                                          sizeof(CxxPlatform),
+                                          0,
+                                          1,
+                                          (char *)"S",
+                                          (char *)"",
+                                          (int (*)(CSOUND*,void*)) CxxPlatform::init_,
+                                          (int (*)(CSOUND*,void*)) 0,
                                           (int (*)(CSOUND*,void*)) 0);
         return status;
     }
