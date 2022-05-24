@@ -41,6 +41,7 @@
 #include <unistd.h>
 #endif
 #include <csdl.h>
+#include <csignal>
 #include <csound.h>
 #include <OpcodeBase.hpp>
 #include <cstdio>
@@ -422,6 +423,53 @@ public:
     };
 };
 
+/**
+ * Immedidately raises an operating system signal, identified by the string form  
+ * of the usual macro constant: 
+ * "SIGTERM"	Termination request, sent to the program. This can be used to 
+ *              force Csound to exit when otherwise it would hang.
+ * "SIGSEGV"	Invalid memory access (segmentation fault).
+ * "SIGINT"	    External interrupt, usually initiated by the user. This can 
+ *              used when debugging to force Csound to break execution.
+ * "SIGILL"	    Invalid program image, such as invalid instruction.
+ * "SIGABRT"	Abnormal termination condition, as is e.g. initiated by abort().
+ * "SIGFPE"	    Erroneous arithmetic operation, such as divide by zero,
+ */
+class CxxRaise : public csound::OpcodeBase<CxxRaise>
+{
+public:
+    // OUTPUTS
+    // INPUTS
+    STRINGDAT *S_signum;
+    // STATE
+    /**
+     * This is an i-time only opcode. Everything happens in init.
+     */
+    int init(CSOUND *csound)
+    {
+        std::string signum = S_signum->data;
+        if (signum == "SIGTERM") {
+            std::raise(SIGTERM);
+        } 
+        if (signum == "SIGSEGV") {
+            std::raise(SIGSEGV);
+        } 
+        if (signum == "SIGINT") {
+            std::raise(SIGINT);
+        } 
+        if (signum == "SIGILL") {
+            std::raise(SIGILL);
+        } 
+        if (signum == "SIGABRT") {
+            std::raise(SIGABRT);
+        } 
+        if (signum == "SIGFPE") {
+            std::raise(SIGFPE);
+        }         
+        return OK;
+    };
+};
+
 
 extern "C" {
 
@@ -455,6 +503,16 @@ extern "C" {
                                           (char *)"SS",
                                           (char *)"",
                                           (int (*)(CSOUND*,void*)) CxxOperatingSystem::init_,
+                                          (int (*)(CSOUND*,void*)) 0,
+                                          (int (*)(CSOUND*,void*)) 0);
+        status += csound->AppendOpcode(csound,
+                                          (char *)"cxx_raise",
+                                          sizeof(CxxRaise),
+                                          0,
+                                          1,
+                                          (char *)"",
+                                          (char *)"S",
+                                          (int (*)(CSOUND*,void*)) CxxRaise::init_,
                                           (int (*)(CSOUND*,void*)) 0,
                                           (int (*)(CSOUND*,void*)) 0);
         return status;

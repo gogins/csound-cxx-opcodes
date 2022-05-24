@@ -156,6 +156,34 @@ system name and a list of compiler macros that identify the operating system.
 The operating system name in turn is used to execute an appropriate compiler 
 command for that operating system.
 
+# cxx_raise
+
+`cxx_raises` - Immediately raises the specified operating system signal.
+
+## Description
+
+The `cxx_raise`  opcode  immediately raises an operating system signal, 
+identified by the string form of the usual macro constant: 
+
+"SIGTERM" - Termination request, sent to the program. This can be used to 
+force Csound to exit, when otherwise it would hang.
+
+"SIGSEGV" - Invalid memory access (segmentation fault).
+
+"SIGINT" - External interrupt, usually initiated by the user. This can 
+be used when debugging, to force Csound to break execution.
+
+"SIGILL" - Invalid program image, such as invalid instruction.
+
+"SIGABRT" - Abnormal termination condition, as is e.g. initiated by abort().
+
+"SIGFPE" - Erroneous arithmetic operation, such as divide by zero,
+
+## Syntax
+```
+cxx_raise S_signal_name
+```
+
 # Installation
 
 1. Install the C++ toolchain of your preference.
