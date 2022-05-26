@@ -449,27 +449,32 @@ public:
     {
         std::string signum = S_signum->data;
         if (signum == "SIGTERM") {
+            std::signal(SIGTERM, SIG_DFL);
             std::raise(SIGTERM);
         } 
         if (signum == "SIGSEGV") {
+            std::signal(SIGSEGV, SIG_DFL);
             std::raise(SIGSEGV);
         } 
         if (signum == "SIGINT") {
+            std::signal(SIGINT, SIG_DFL);
             std::raise(SIGINT);
         } 
         if (signum == "SIGILL") {
+            std::signal(SIGILL, SIG_DFL);
             std::raise(SIGILL);
         } 
         if (signum == "SIGABRT") {
+            std::signal(SIGABRT, SIG_DFL);
             std::raise(SIGABRT);
         } 
         if (signum == "SIGFPE") {
+            std::signal(SIGFPE, SIG_DFL);
             std::raise(SIGFPE);
         }         
         return OK;
     };
 };
-
 
 extern "C" {
 
