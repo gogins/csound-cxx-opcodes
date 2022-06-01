@@ -784,7 +784,7 @@ extern "C" int score_generator(CSOUND *csound) {
 }}
 
 if strcmp(gS_os, "macOS") == 0 then
-i_result cxx_compile "score_generator", S_score_generator_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -DUSE_DOUBLE -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/eigen/3.4.0_1/include -lpthread -lm -L/home/mkg/cxx-opcodes/examples -lstk"
+i_result cxx_compile "score_generator", S_score_generator_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -DUSE_DOUBLE -stdlib=libc++ -I/usr/local/include/csound -I/Library/Frameworks/CsoundLib64.framework/Versions/6.0/Headers -I/opt/homebrew/Cellar/eigen/3.4.0_1/include -lpthread -lm"
 endif
 if strcmp(gS_os, "Linux") == 0 then
 i_result cxx_compile "score_generator", S_score_generator_code, "g++ -g -v -O2 -fPIC -shared -std=c++17 -I/usr/local/include/csound -I/usr/include/eigen3 -lpthread -lm -lstk"
