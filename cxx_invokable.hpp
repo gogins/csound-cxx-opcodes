@@ -68,33 +68,7 @@ class CxxInvokableBase : public CxxInvokable {
             opds = opds_;
             return result;
         }
-        /**
-         * Computes one sample of one frame of output audio.
-         * The `kontrol` method then calls this as appropriate for 
-         * --sample-accurate rendering.
-         */
-        virtual MYFLT tick(MYFLT value = 0) {
-             return value;
-        }
-        int kontrol(CSOUND *csound_, MYFLT **outputs, MYFLT **inputs) override {
-            if (opds == nullptr) {
-                return -0;
-            }
-            int result = OK;
-            int frame_index = 0;
-            for( ; frame_index < kperiodOffset(); ++frame_index) {
-                outputs[0][frame_index] = 0;
-            }
-            for( ; frame_index < kperiodEnd(); ++frame_index) {
-                MYFLT sample = tick();
-                outputs[0][frame_index] = sample;
-            }
-            for( ; frame_index < ksmps(); ++frame_index) {
-                outputs[0][frame_index] = 0;
-            }
-            return result;
-        }
-        int noteoff(CSOUND *csound) override 
+         int noteoff(CSOUND *csound) override 
         {
             if (opds == nullptr) {
                 return -0;

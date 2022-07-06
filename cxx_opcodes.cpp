@@ -82,8 +82,8 @@ static void *cxx_load_library(const char *library_name) {
 #endif
 #if (defined(__APPLE__) || defined(__linux__) || defined(__unix__) || defined(_POSIX_VERSION))
     library_handle = dlopen(library_name, RTLD_NOW | RTLD_GLOBAL);
-    return library_handle;
 #endif
+    std::fprintf(stderr, "####### cxx_load_library: library_name: %s library_handle: %p\n", library_name, library_handle);
     return library_handle;
 }
 
@@ -260,7 +260,7 @@ public:
     MYFLT *inputs[VARGMAX];
     // STATE
     int thread;
-    std::shared_ptr<CxxInvokable> cxx_invokable;
+    CxxInvokable *cxx_invokable;
     int init(CSOUND *csound)
     {
         std::lock_guard<std::mutex> lock(invokable_mutex);
@@ -268,7 +268,7 @@ public:
         thread = (int) *i_thread;
         // Look up factory.
         auto invokable_factory_name = S_invokable_factory->data;
-        if (cxx_diagnostics_enabled()) csound->Message(csound,     "####### cxx_invoke::init: invokable_factory_name:  \"%s\"\n", invokable_factory_name);
+        if (cxx_diagnostics_enabled()) csound->Message(csound,     "####### cxx_invoke::init: invokable_factory_name:  \"%s\" cxx_invokable: %p\n", invokable_factory_name, cxx_invokable);
         // Create instance. We simply search through all the dynamic link 
         // libraries compiled and loaded by this Csound process. TODO: If it 
         // turns out that there are hundreds of these, make this more 
@@ -278,10 +278,9 @@ public:
             auto invokable_factory = (CxxInvokable *(*)()) csound->GetLibrarySymbol(module_handle, invokable_factory_name);
             if (invokable_factory != nullptr) {
                 if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::init: found invokable factory: %p\n", invokable_factory);
-                auto instance = invokable_factory();
-                if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::init: created new invokable:   %p for thread: %d\n", instance, thread);
-                cxx_invokable.reset(instance);
-                if (thread == 2) {
+                cxx_invokable= invokable_factory();
+                if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::init: created new invokable:   %p for thread: %d\n", cxx_invokable, thread);
+                 if (thread == 2) {
                     return result;
                 }
                 // Invoke the instance.
@@ -307,7 +306,10 @@ public:
         int result = OK;
         result = cxx_invokable->noteoff(csound);
         if (cxx_diagnostics_enabled()) csound->Message(csound, "####### cxx_invoke::noteoff: invokable::noteoff: result: %d\n", result);
-        cxx_invokable.reset();
+        if (cxx_invokable != nullptr) {
+            delete cxx_invokable;
+            cxx_invokable = nullptr;
+        }
         return result;
     }
 };
