@@ -135,10 +135,12 @@ if(codesign_check_download_code EQUAL 0)
             "${csound_ac_refresh_dir}/codesign-check.bash"
             "${CSOUND_CXX_OPCODE_REPOSITORY_ROOT}/codesign-check.bash"
     )
-    execute_process(
-        COMMAND /bin/chmod +x
-            "${CSOUND_CXX_OPCODE_REPOSITORY_ROOT}/codesign-check.bash"
-    )
+    if(UNIX)
+        execute_process(
+            COMMAND "${CMAKE_COMMAND}" -E chmod +x
+                "${CSOUND_CXX_OPCODE_REPOSITORY_ROOT}/codesign-check.bash"
+        )
+    endif()
 else()
     list(GET codesign_check_download_status 1 codesign_check_download_message)
     message(WARNING

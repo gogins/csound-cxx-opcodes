@@ -339,7 +339,7 @@ cxx_raise S_signal_name
 
    **Linux:** `./clean-build-linux.bash`
 
-   **Windows (MSYS2 MinGW64):** `./clean-build-windows.bash`
+   **Windows (MSVC):** `pwsh -File clean-build-windows.ps1` with `CSOUND_ROOT` set to an MSVC Csound 7 install
 
    The plugin is staged under `dist/bin/` (`libcsound_cxx.dylib`, `libcsound_cxx.so`, 
    or `csound_cxx.dll` depending on the platform).
